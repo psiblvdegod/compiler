@@ -1,33 +1,34 @@
-name: ocaml-ci
+name: Builds, tests & co
 
 on:
   push:
     branches: '**'
-  pull_request:
-    branches: '**'
+
+permissions: read-all
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    name: tests
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
+
+    runs-on: ${{ matrix.os }}
 
     steps:
-      - name: checkout
+      - name: Checkout tree
         uses: actions/checkout@v4
 
-      - name: set-up
+      - name: Set-up OCaml
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: "5.2"
 
       - run: opam install . --deps-only --with-test
 
-      - run: |
-          for dir in */; do
-            if [ -f "$dir/dune-project" ]; then
-              cd "$dir"
-              dune build
-              dune runtest
-              cd ..
-            fi
-          done
+      - run: opam exec -- dune build
+
+      - run: opam exec -- dune runtest

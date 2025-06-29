@@ -30,7 +30,7 @@ jobs:
             echo "$dir"
             ls
             pwd
-            if [ -f "$dir/dune-project" ]; then  
+            if [ -f "$dir%?/dune-project" ]; then  
               cd "$dir"
               pwd
               dune build

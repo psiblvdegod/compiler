@@ -25,8 +25,11 @@ jobs:
           for dir in */; do
             if [ -f "${dir%?}/dune-project" ]; then  
               cd "$dir"
+              dune --version
               dune build
-              dune test
+              dune --version
+              dune runtest
+              dune --version
               exit_code=$?
               if [$exit_code -neq 0]; then
                 exit $exit_code

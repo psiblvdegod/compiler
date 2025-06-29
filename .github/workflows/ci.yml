@@ -16,8 +16,8 @@ jobs:
           sudo apt update
           sudo apt install -y ocaml opam
           opam init --disable-sandboxing -y
-          echo 'eval $(opam env)' >> ~/.bashrc
-          apt install dune
+          eval $(opam env)
+          opam install dune.3.19.0
           opam install . --deps-only --yes
 
       - run: |

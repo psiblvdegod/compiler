@@ -20,8 +20,6 @@ jobs:
           opam install dune --yes
           opam install . --deps-only --yes
           dune --version
-
-      - run: |
           for dir in */; do
             if [ -f "${dir%?}/dune-project" ]; then  
               cd "$dir"
@@ -37,3 +35,4 @@ jobs:
               cd ..
             fi
           done
+

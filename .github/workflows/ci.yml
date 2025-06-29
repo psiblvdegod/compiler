@@ -15,24 +15,17 @@ jobs:
 
       - name: setup
         run: |
-          pwd
           sudo apt update
           sudo apt install -y ocaml opam
           opam init --disable-sandboxing -y
           eval $(opam env)
           opam install . --deps-only --with-test --yes
-          pwd
-          ls
 
       - name: test
         run: |
           for dir in */; do
-            echo "$dir%?"
-            ls
-            pwd
-            if [ -f "$dir%?/dune-project" ]; then  
+            if [ -f "${dir}dune-project" ]; then  
               cd "$dir"
-              pwd
               dune build
               dune test
               exit_code=$?

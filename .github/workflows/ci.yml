@@ -26,6 +26,7 @@ jobs:
           for dir in */; do
             asd="${dir%?}/dune-project"
             echo $asd
+            ls
             if [ -f $asd ]; then  
               cd "$dir"
               dune build

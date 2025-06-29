@@ -18,6 +18,7 @@ jobs:
           opam init --disable-sandboxing -y
           eval $(opam env)
           opam install dune --yes
+          opam install alcotest --yes
           opam install . --deps-only --yes
           dune --version
           for dir in */; do

@@ -24,9 +24,10 @@ jobs:
 
       - run: |
           for dir in */; do
-          if [ -f "$dir/dune-project" ]; then
-          opam exec -- dune build
-          opam exec -- dune runtest
-          fi
+            if [ -f "$dir/dune-project" ]; then
+              cd "$dir"
+              dune build
+              dune runtest
+              cd ..
+            fi
           done
-

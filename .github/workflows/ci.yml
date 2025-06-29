@@ -27,7 +27,7 @@ jobs:
             if [ -f "$dir/dune-project" ]; then  
               cd "$dir"
               dune build
-              dune runtest
+              dune test
               cd ..
             fi
           done

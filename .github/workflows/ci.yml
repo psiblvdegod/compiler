@@ -27,6 +27,10 @@ jobs:
             asd="${dir%?}/dune-project"
             echo $asd
             ls
+            cd test_for_ci
+            ls
+            pwd
+
             if [ -f $asd ]; then  
               cd "$dir"
               dune build

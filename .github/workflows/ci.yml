@@ -19,17 +19,13 @@ jobs:
           eval $(opam env)
           opam install dune --yes
           opam install alcotest --yes
-          opam install . --deps-only --yes
-    
-      - run: |
           for dir in */; do
             if [ -f "${dir%?}/dune-project" ]; then  
               cd "$dir"
               dune build
               dune runtest
-              exit_code=$?
-              if [$exit_code -neq 0]; then
-                exit $exit_code
+              if [ $? -ne 0 ]; then
+                exit $?
               fi
               cd ..
             fi

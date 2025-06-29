@@ -1,0 +1,4 @@
+(library
+ (name lib_lexer))
+ 
+(ocamllex rule_token)

@@ -28,6 +28,10 @@ jobs:
               cd "$dir"
               dune build
               dune test
+              exit_code=$?
+              if [$exit_code -neq 0]; then
+                exit $exit_code
+              fi
               cd ..
             fi
           done

@@ -20,15 +20,13 @@ jobs:
           opam install dune --yes
           opam install alcotest --yes
           opam install . --deps-only --yes
-          dune --version
+    
+      - run: |
           for dir in */; do
             if [ -f "${dir%?}/dune-project" ]; then  
               cd "$dir"
-              dune --version
               dune build
-              dune --version
               dune runtest
-              dune --version
               exit_code=$?
               if [$exit_code -neq 0]; then
                 exit $exit_code
@@ -36,4 +34,3 @@ jobs:
               cd ..
             fi
           done
-

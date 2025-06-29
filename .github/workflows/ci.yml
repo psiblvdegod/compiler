@@ -27,7 +27,7 @@ jobs:
       - name: test
         run: |
           for dir in */; do
-            echo "$dir"
+            echo "$dir%?"
             ls
             pwd
             if [ -f "$dir%?/dune-project" ]; then  

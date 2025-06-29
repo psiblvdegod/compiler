@@ -12,17 +12,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ocaml/setup-ocaml@v2
-        with:
-          ocaml-compiler: "5.0"
-          dune-cache: true
-
       - run: |
           sudo apt update
           sudo apt install -y ocaml opam
           opam init --disable-sandboxing -y
-          eval $(opam env)
-          opam install dune
+          echo 'eval $(opam env)' >> ~/.bashrc
+          opam install dune.3.19.0
+          which dune
+          opam install . --deps-only --yes
+          which dune
 
       - run: |
           for dir in */; do

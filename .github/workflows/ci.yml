@@ -10,20 +10,21 @@ jobs:
     name: tests
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: setup
-        run: |
+      - uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: "5.0"
+          dune-cache: true
+
+      - run: |
           sudo apt update
           sudo apt install -y ocaml opam
           opam init --disable-sandboxing -y
-          eval $(opam env)  
+          eval $(opam env)
           opam install dune
-          opam install . --deps-only --yes
 
-      - name: test
-        run: |
+      - run: |
           for dir in */; do
             if [ -f "${dir%?}/dune-project" ]; then  
               cd "$dir"

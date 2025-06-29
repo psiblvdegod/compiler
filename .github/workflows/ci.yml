@@ -24,7 +24,9 @@ jobs:
       - name: test
         run: |
           for dir in */; do
-            if [ -f "${dir}dune-project" ]; then  
+            asd="${dir%?}/dune-project"
+            echo $asd
+            if [ -f $asd ]; then  
               cd "$dir"
               dune build
               dune test

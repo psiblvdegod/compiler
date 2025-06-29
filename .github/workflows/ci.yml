@@ -19,19 +19,13 @@ jobs:
           sudo apt install -y ocaml opam
           opam init --disable-sandboxing -y
           eval $(opam env)
-          opam install . --deps-only --with-test --yes
+          opam install dune
+          opam install alcotest
 
       - name: test
         run: |
           for dir in */; do
-            asd="${dir%?}/dune-project"
-            echo $asd
-            ls
-            cd test_for_ci
-            ls
-            pwd
-
-            if [ -f $asd ]; then  
+            if [ -f "${dir%?}/dune-project" ]; then  
               cd "$dir"
               dune build
               dune test

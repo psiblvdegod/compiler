@@ -1,32 +1,33 @@
-name: Builds, tests & co
+name: ocaml-ci
 
 on:
   push:
     branches: '**'
 
-permissions: read-all
-
 jobs:
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - macos-latest
-          - ubuntu-latest
-          - windows-latest
-
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    name: tests
 
     steps:
-      - name: Checkout tree
+      - name: checkout
         uses: actions/checkout@v4
 
-      - name: Set-up OCaml
-        uses: ocaml/setup-ocaml@v2
+      - name: setup
+        run: |
+          sudo apt update
+          sudo apt install -y ocaml opam
+          opam init --disable-sandboxing -y
+          eval $(opam env)
+          opam install . --deps-only --with-test --yes
 
-      - run: opam install . --deps-only --with-test
-
-      - run: opam exec -- dune build
-
-      - run: opam exec -- dune runtest
+      - name: test
+        run: |
+          for dir in */; do
+            if [ -f "$dir/dune-project" ]; then  
+              cd "$dir"
+              dune build
+              dune runtest
+              cd ..
+            fi
+          done

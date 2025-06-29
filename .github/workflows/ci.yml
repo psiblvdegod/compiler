@@ -19,6 +19,7 @@ jobs:
           eval $(opam env)
           opam install dune --yes
           opam install alcotest --yes
+
           for dir in */; do
             if [ -f "${dir%?}/dune-project" ]; then  
               cd "$dir"

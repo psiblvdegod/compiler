@@ -18,7 +18,8 @@ jobs:
           sudo apt update
           sudo apt install -y ocaml opam
           opam init --disable-sandboxing -y
-          eval $(opam env)
+          eval $(opam env)  
+          opam install dune
           opam install . --deps-only --yes
 
       - name: test

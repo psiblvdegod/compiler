@@ -4,4 +4,4 @@
 
 (test
  (name test_ast)
- (libraries alcotest ast parse lexer))
+ (libraries alcotest expression parse lexer))

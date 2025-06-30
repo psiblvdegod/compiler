@@ -1,0 +1,9 @@
+(library
+ (name parse)
+ (modules parse)
+ (libraries lexer expression))
+
+(library
+ (name expression)
+ (modules expression)
+ (libraries lexer))

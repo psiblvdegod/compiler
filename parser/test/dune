@@ -3,5 +3,5 @@
  (libraries alcotest lexer))
 
 (test
- (name test_ast)
- (libraries alcotest expression parse lexer))
+ (name test_parser)
+ (libraries alcotest parser lexer))

@@ -1,9 +1,4 @@
 (library
- (name parse)
- (modules parse)
- (libraries lexer expression))
-
-(library
- (name expression)
- (modules expression)
+ (name parser)
+ (modules types parse_expression parse_condition parse_statement)
  (libraries lexer))

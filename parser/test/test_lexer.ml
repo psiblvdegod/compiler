@@ -1,5 +1,5 @@
 open Alcotest
-open Lexer.Parse
+open Lexer.Processing
 open Lexer.Token
 
 let simple_correct_expression () =
@@ -13,7 +13,7 @@ let should_fail_on_invalid_symbols () =
   try
     ignore (get_tokens_of_expression input)
   with
-  | Invalid_expression _ -> ()
+  | Invalid_token _ -> ()
   | Failure msg -> failwith msg
   | _ -> failwith "expected exception did not occur"
 
@@ -22,7 +22,7 @@ let should_fail_on_empty_string () =
   try
     ignore (get_tokens_of_expression input)
   with
-  | Invalid_expression _ -> ()
+  | Invalid_token _ -> ()
   | Failure msg -> failwith msg
   | _ -> failwith "expected exception did not occur"
 

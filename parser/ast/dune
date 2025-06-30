@@ -1,9 +1,0 @@
-(library
- (name parse)
- (modules parse)
- (libraries lexer ast))
-
-(library
- (name ast)
- (modules ast)
- (libraries lexer))

@@ -1,5 +1,5 @@
 {
-  exception Invalid_token of string
+  exception Invalid_token
 
   type token =
   | WHILE
@@ -8,7 +8,7 @@
   | DONE
 
   | SEMICOLON
-  | ASSIGN
+  | COLONEQQ
   | VAR
 
   | ID of string
@@ -21,6 +21,8 @@
 
   | EQ
   | NEQ
+  | LEQ
+  | GEQ
 
   | LP
   | RP
@@ -36,7 +38,7 @@ rule token = parse
   | "done"    { DONE }
   | "do"      { DO }
 
-  | ":="      { ASSIGN }
+  | ":="      { COLONEQQ }
   | "var"     { VAR }
   | ";"       { SEMICOLON }
 
@@ -47,6 +49,8 @@ rule token = parse
 
   | "!="      { NEQ }
   | "=="      { EQ }
+  | "<="      { LEQ }
+  | ">="      { GEQ }
 
   | '('       { LP }
   | ')'       { RP }
@@ -54,4 +58,4 @@ rule token = parse
   | ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']* as id { ID id }
   
   | eof   { EOF }
-  | _     { raise (Invalid_token "invalid symbol") }
+  | _     { raise Invalid_token }

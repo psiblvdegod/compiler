@@ -9,6 +9,7 @@ type expression =
   | Div of expression * expression
   | Mul of expression * expression
   | Sub of expression * expression
+  | Call of string * expression list
 
 and program = statement list
 

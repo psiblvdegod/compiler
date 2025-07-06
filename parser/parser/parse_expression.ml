@@ -30,11 +30,20 @@ and highpr_inner left = function
 
 and parse_term = function
     | [] -> raise Invalid_expression
-    | ID var :: rest -> Var var, rest
     | INT n :: rest -> Int n, rest
+    | ID name :: rest -> parse_call name [] rest
     | LP :: rest ->
         let (expr, rest) = lowpr_outer rest in
         (match rest with
         | RP :: rest -> expr, rest
         | _ -> raise Invalid_expression)
     | _ -> raise Invalid_expression
+
+(* parses function calls. example: func1 arg1 arg2 + func2 arg1 *)
+and parse_call name args rest =
+    match rest with
+    | ID x :: rest -> parse_call name ((Var x) :: args) rest
+    | INT x :: rest -> parse_call name ((Int x) :: args) rest
+    | _ -> match args with
+        | [] -> Var name, rest
+        | args2 -> Call(name, List.rev args2), rest

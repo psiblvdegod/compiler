@@ -1,6 +1,5 @@
 open Parse_expression
 open Parse_condition
-open Lexer.Processing
 open Lexer.Token
 open Types
 
@@ -39,5 +38,5 @@ and parse_assignment = function
     | _ -> raise Invalid_statement)
   | _ -> raise Invalid_statement
 
-let parse_to_program source =
-  let (result, _) = parse_to_program [] (tokens_of_string source) in result
+let parse_to_program tokens =
+  let (result, _) = parse_to_program [] tokens in result

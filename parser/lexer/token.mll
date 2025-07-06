@@ -7,6 +7,8 @@
   | DO
   | DONE
 
+  | CALL
+
   | SEMICOLON
   | COLONEQQ
   | VAR
@@ -37,6 +39,8 @@ rule token = parse
   | "for"     { FOR }
   | "done"    { DONE }
   | "do"      { DO }
+
+  | "call"    { CALL }
 
   | ":="      { COLONEQQ }
   | "var"     { VAR }

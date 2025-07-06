@@ -9,3 +9,8 @@
 (test
  (name test_program)
  (libraries alcotest parser lexer))
+
+(test
+ (name test_functions)
+ (libraries alcotest parser lexer))
+ 

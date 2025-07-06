@@ -1,23 +1,24 @@
 open Alcotest
 open Parser.Types
 open Parser.Parse_to_program
+open Lexer.Processing
 
 let assignment_should_pass_1 () =
   let input = "var a := b ; var c := 5 ;" in
   let expected_result = [Assignment("a", Var "b"); Assignment("c", Int 5);] in
-  let actual_result = parse_to_program input in
+  let actual_result = tokens_of_string input |> parse_to_program in
   check bool "test1" (actual_result = expected_result) true
 
 let assignment_should_pass_2 () =
   let input = "var a := 1 + b * 2 ; " in
   let expected_result = [Assignment("a", Add(Int 1, Mul(Var "b", Int 2)))] in
-  let actual_result = parse_to_program input in
+  let actual_result = tokens_of_string input |> parse_to_program in
   check bool "test2" (actual_result = expected_result) true
 
 let assignment_should_raise_1 () =
   let input = "var a := while * for; " in
   try
-    ignore (parse_to_program input)
+    ignore (tokens_of_string input |> parse_to_program)
   with
   | Invalid_expression -> ()
   | Failure msg -> failwith msg
@@ -26,7 +27,7 @@ let assignment_should_raise_1 () =
 let assignment_should_raise_2 () =
   let input = "var a * b := 5 ; " in
   try
-    ignore (parse_to_program input)
+    ignore (tokens_of_string input |> parse_to_program)
   with
   | Invalid_statement -> ()
   | Failure msg -> failwith msg
@@ -56,7 +57,7 @@ let while_should_pass_1 () =
     ]  
   
   in
-  let actual_result = parse_to_program input in
+  let actual_result = tokens_of_string input |> parse_to_program in
   check bool "test1" (actual_result = expected_result) true
 
 let while_should_pass_2 () =
@@ -86,7 +87,7 @@ let while_should_pass_2 () =
       Assignment("a", Int 0);
     ]
   in
-  let actual_result = parse_to_program input in
+  let actual_result = tokens_of_string input |> parse_to_program in
   check bool "test2" (actual_result = expected_result) true
 
 let while_should_raise_1 () =
@@ -96,7 +97,7 @@ let while_should_raise_1 () =
      done"
   in
   try
-    ignore (parse_to_program input)
+    ignore (tokens_of_string input |> parse_to_program)
   with
   | Invalid_expression -> ()
   | Failure msg -> failwith msg
@@ -109,7 +110,7 @@ let while_should_raise_2 () =
      done"
   in
   try
-    ignore (parse_to_program input)
+    ignore (tokens_of_string input |> parse_to_program)
   with
   | Invalid_statement -> ()
   | Failure msg -> failwith msg

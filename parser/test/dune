@@ -3,7 +3,7 @@
  (libraries alcotest lexer))
 
 (test
- (name test_program)
+ (name test_parse_to_program)
  (libraries alcotest parser lexer))
 
 (test
@@ -15,5 +15,5 @@
  (libraries alcotest parser lexer))
 
 (test
- (name test_parser)
+ (name test_parse_expression)
  (libraries alcotest parser lexer))

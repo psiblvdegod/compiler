@@ -3,46 +3,47 @@ open Parser.Types
 open Lexer.Processing
 open Alcotest
 
-let parse_condition_should_pass_1 () =
-  let input = "a == b + 6" in
+let correct_input_1 = "a == b + 6"
+let correct_input_2 = "qwe >= asd / zxc"
+let incorrect_input_1 = "a == b == c"
+let incorrect_input_2 = "a <"
+
+let parse_condition_passes_1 () =
   let expected_result = Eq(Var "a", Add(Var "b", Int 6)) in
-  let actual_result = tokens_of_string input |> parse_condition in
-  check bool "test1" (actual_result = expected_result) true
+  let actual_result = tokens_of_string correct_input_1 |> parse_condition in
+  check bool ("parse_condition on: " ^ correct_input_1) (actual_result = expected_result) true
 
-let parse_condition_should_pass_2 () =
-  let input = "qwe >= asd / zxc" in
+let parse_condition_passes_2 () =
   let expected_result = Geq(Var "qwe", Div(Var "asd", Var "zxc")) in
-  let actual_result = tokens_of_string input |> parse_condition in
-  check bool "test1" (actual_result = expected_result) true
+  let actual_result = tokens_of_string correct_input_2 |> parse_condition in
+  check bool ("parse_condition on: " ^ correct_input_2) (actual_result = expected_result) true
 
-let parse_condition_should_raise_1 () =
-  let input = "a == b == c" in
+let parse_condition_raises_1 () =
    try
-    ignore (tokens_of_string input |> parse_condition)
+    ignore (tokens_of_string incorrect_input_1 |> parse_condition)
   with
   | Invalid_expression -> ()
   | Failure msg -> failwith msg
-  | _ -> failwith "expected exception did not occur"
+  | _ -> failwith ("expected exception did not occur\n" ^ "parse_condition on: " ^ incorrect_input_1)
 
-let parse_condition_should_raise_2 () =
-  let input = "a <" in
+let parse_condition_raises_2 () =
    try
-    ignore (tokens_of_string input |> parse_condition)
+    ignore (tokens_of_string incorrect_input_2 |> parse_condition)
   with
   | Invalid_expression -> ()
   | Failure msg -> failwith msg
-  | _ -> failwith "expected exception did not occur"
+  | _ -> failwith ("expected exception did not occur\n" ^ "parse_condition on: " ^ incorrect_input_2)
 
 
-let parse_condition_tests =
+let tests_for_parse_condition =
   [
-    ("test for parse_condition to pass", `Quick, parse_condition_should_pass_1);
-    ("test for parse_condition to pass", `Quick, parse_condition_should_pass_2);
-    ("test for parse_condition to raise", `Quick, parse_condition_should_raise_1);
-    ("test for parse_condition to raise", `Quick, parse_condition_should_raise_2);
+    ("parse_condition passes on: " ^ correct_input_1, `Quick, parse_condition_passes_1);
+    ("parse_condition passes on: " ^ correct_input_2, `Quick, parse_condition_passes_2);
+    ("parse_condition raises on: " ^ incorrect_input_1, `Quick, parse_condition_raises_1);
+    ("parse_condition raises on: " ^ incorrect_input_2, `Quick, parse_condition_raises_2);
   ]
 
-let () = run "test_conditions.ml"
+let () = run "test_condition.ml"
   [
-    ("tests for parse_condition", parse_condition_tests);
+    ("tests for parse_condition", tests_for_parse_condition);
   ]

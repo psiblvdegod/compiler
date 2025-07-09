@@ -21,4 +21,3 @@ jobs:
           opam install alcotest --yes
           dune build
           dune test
-          done

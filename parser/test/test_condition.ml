@@ -1,22 +1,24 @@
 open Parser.Parse_condition
 open Parser.Types
+open Lexer.Processing
+open Alcotest
 
 let parse_condition_should_pass_1 () =
   let input = "a == b + 6" in
   let expected_result = Eq(Var "a", Add(Var "b", Int 6)) in
-  let actual_result = tokens_of_string input |> parse_to_program in
+  let actual_result = tokens_of_string input |> parse_condition in
   check bool "test1" (actual_result = expected_result) true
 
 let parse_condition_should_pass_2 () =
   let input = "qwe >= asd / zxc" in
   let expected_result = Geq(Var "qwe", Div(Var "asd", Var "zxc")) in
-  let actual_result = tokens_of_string input |> parse_to_program in
+  let actual_result = tokens_of_string input |> parse_condition in
   check bool "test1" (actual_result = expected_result) true
 
 let parse_condition_should_raise_1 () =
   let input = "a == b == c" in
    try
-    ignore (tokens_of_string input |> parse_to_program)
+    ignore (tokens_of_string input |> parse_condition)
   with
   | Invalid_expression -> ()
   | Failure msg -> failwith msg
@@ -25,7 +27,7 @@ let parse_condition_should_raise_1 () =
 let parse_condition_should_raise_2 () =
   let input = "a <" in
    try
-    ignore (tokens_of_string input |> parse_to_program)
+    ignore (tokens_of_string input |> parse_condition)
   with
   | Invalid_expression -> ()
   | Failure msg -> failwith msg
@@ -40,7 +42,7 @@ let parse_condition_tests =
     ("test for parse_condition to raise", `Quick, parse_condition_should_raise_2);
   ]
 
-let () = run "all tests"
+let () = run "test_conditions.ml"
   [
     ("tests for parse_condition", parse_condition_tests);
   ]

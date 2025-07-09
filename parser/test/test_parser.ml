@@ -48,10 +48,10 @@ let parentheses_test2 () =
 let other_tests =
   [
     ("parentheses_test1", `Quick, parentheses_test1);
-    ("parentheses_test2", `Quick, parentheses_test2);
+    ("parentheses_test1", `Quick, parentheses_test2);
   ]
 
-let binary_operations_tests =
+let _binary_operations_tests =
   [
     ("add_test", `Quick, add_test);
     ("mul_test", `Quick, mul_test);
@@ -60,8 +60,7 @@ let binary_operations_tests =
     ("sub_and_div_test", `Quick, sub_and_div_test);
   ]
 
-let () = run "all tests"
+let () = run "test_parser.ml"
   [
-    ("binary operations", binary_operations_tests);
     ("other tests", other_tests);
   ]

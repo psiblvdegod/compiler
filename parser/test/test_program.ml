@@ -125,7 +125,7 @@ let while_tests_to_pass =
     ("test for while to raise 2", `Quick, while_should_raise_2);
   ]
 
-let () = run "all tests"
+let () = run "test_program.ml"
   [
     ("tests for assignment", assignment_tests);
     ("tests for while", while_tests_to_pass);

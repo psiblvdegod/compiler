@@ -1,6 +1,6 @@
 (lang dune 3.19)
 
-(name ast)
+(name compiler)
 
 (authors "psiblvdegod")
 

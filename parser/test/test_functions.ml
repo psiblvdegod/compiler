@@ -3,57 +3,61 @@ open Parser.Parse_to_program
 open Lexer.Processing
 open Parser.Types
 
-let should_pass_1 () =
-  let input = "var a := fact 1 ;" in
+let correct_input_1 = "var a := fact 1;"
+let correct_input_2 = "
+    while 0 == 0 do
+      var a := fact 1 b;
+    done"
+let correct_input_3 = "var a := f a 1 + f 1 + f;"
+let incorrect_input_1 = "var func a := 1"
+let incorrect_input_2 = "var a := fact for while do"
+
+let parse_to_program_passes_1 () =
   let expected_result = [Assignment("a", Call("fact", [Int 1]))] in 
-  let actual_result = tokens_of_string input |> parse_to_program in
-  check bool "test1" (expected_result = actual_result) true
+  let actual_result = tokens_of_string correct_input_1 |> parse_to_program in
+  check bool ("parse_to_program on: " ^ correct_input_1) (expected_result = actual_result) true
 
-let should_pass_2 () =
-  let input = "while 0 == 0 do var a := fact 1 b ; done" in
+let parse_to_program_passes_2 () =
   let expected_result = [While(Eq(Int 0, Int 0),[Assignment("a", Call("fact", [Int 1; Var "b"]))])] in 
-  let actual_result = tokens_of_string input |> parse_to_program in
-  check bool "test2" (expected_result = actual_result) true
+  let actual_result = tokens_of_string correct_input_2 |> parse_to_program in
+  check bool ("parse_to_program on: " ^ correct_input_2) (expected_result = actual_result) true
 
-let should_pass_3 () =
-  let input = "var a := f a 1 + f 1 + f ;" in
+let parse_to_program_passes_3 () =
   let expected_result =
     [Assignment("a", Add(Add(Call("f", [Var "a"; Int 1]), Call("f", [Int 1])), Var "f"))] in 
-  let actual_result = tokens_of_string input |> parse_to_program in
-  check bool "test1" (expected_result = actual_result) true
+  let actual_result = tokens_of_string correct_input_3 |> parse_to_program in
+  check bool ("parse_to_program on: " ^ correct_input_3) (expected_result = actual_result) true
 
-let should_raise_1 () =
-  let input = "var func a := 1" in
+let parse_to_program_raises_1 () =
    try
-    ignore (tokens_of_string input |> parse_to_program)
+    ignore (tokens_of_string incorrect_input_1 |> parse_to_program)
   with
   | Invalid_statement -> ()
   | Failure msg -> failwith msg
-  | _ -> failwith "expected exception did not occur"
+  | _ -> failwith ("expected exception did not occur\n" ^ "parse_to_program on: " ^ incorrect_input_1)
 
-let should_raise_2 () =
-  let input = "var a := fact for while do" in
+let parse_to_program_raises_2 () =
    try
-    ignore (tokens_of_string input |> parse_to_program)
+    ignore (tokens_of_string incorrect_input_2 |> parse_to_program)
   with
   | Invalid_expression -> ()
   | Failure msg -> failwith msg
-  | _ -> failwith "expected exception did not occur"
+  | _ -> failwith ("expected exception did not occur\n" ^ "parse_to_program on: " ^ incorrect_input_2)
 
 let tests_to_pass =
   [ 
-    ("test_to_pass_1", `Quick, should_pass_1);
-    ("test_to_pass_2", `Quick, should_pass_2);
-    ("test_to_pass_3", `Quick, should_pass_3);
+    ("parse_to_program passes on:\n" ^ correct_input_1, `Quick, parse_to_program_passes_1);
+    ("parse_to_program passes on:\n" ^ correct_input_2, `Quick, parse_to_program_passes_2);
+    ("parse_to_program passes on:\n" ^ correct_input_3, `Quick, parse_to_program_passes_3);
   ]
 
 let tests_to_raise =
   [ 
-    ("test_to_raise_1", `Quick, should_raise_1);
-    ("test_to_raise_2", `Quick, should_raise_2);
+    ("parse_to_program raises on:\n" ^ incorrect_input_1, `Quick, parse_to_program_raises_1);
+    ("parse_to_program raises on:\n" ^ incorrect_input_2, `Quick, parse_to_program_raises_2);
   ]
 
-let () = run "test_functions"
+let () = run "test_functions.ml"
   [
     ("tests_to_pass", tests_to_pass);
     ("tests_to_raise", tests_to_raise);

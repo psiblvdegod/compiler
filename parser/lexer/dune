@@ -1,5 +1,4 @@
 (library
  (name lexer)
- (modules processing token))
-
-(ocamllex token)
+ (modules processing token)
+ (libraries str))

@@ -1,4 +1,3 @@
-open Str
 open Token
 
 let token_of_keyword = function
@@ -96,8 +95,13 @@ let try_n state =
   | 'a'..'z' -> Some (take_str state state.pos)
   | _ -> None
 
+let is_unsignificant state = String.contains " \n\r\t" (state.str.[state.pos])
+
 let rec parse_loop state acc =
   if state.pos = state.len then acc else
+
+  if (is_unsignificant state) then parse_loop (change_pos state (state.pos + 1)) acc else
+
   match try_2 state with
   | Some (state, token) -> parse_loop state (token :: acc)
   | None ->
@@ -108,11 +112,5 @@ let rec parse_loop state acc =
   | Some (state, token) -> parse_loop state (token :: acc)
   | None -> raise Invalid_token))
 
-let parse_str state =
-  match token_of_keyword state.str with
-  | Some token -> [token]
-  | None -> parse_loop state []
-
 let tokens_of_string str =
-  let strs = split (regexp "[ \n\t\r]+") str in
-  List.map (fun s -> s |> init_state |> parse_str |> List.rev) strs |> List.flatten
+  parse_loop (init_state str) [] |> List.rev

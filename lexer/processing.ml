@@ -60,14 +60,20 @@ let try_2 state =
   | None -> None
 
 let rec take_int state index =
-  if index = state.len || (is_digit state.str.[index] = false)
+  if index = state.len
     then change_pos state index, INT(String.sub state.str state.pos (index - state.pos) |> int_of_string)
-    else take_int state (index + 1)
+    else match state.str.[index] with
+    | '0'..'9' -> take_int state (index + 1)
+    | 'a'..'z' -> raise Invalid_token
+    | _ -> change_pos state index, INT(String.sub state.str state.pos (index - state.pos) |> int_of_string)
 
 let rec take_id state index =
-  if index = state.len || (is_letter state.str.[index] = false)
+  if index = state.len
     then change_pos state index, ID(String.sub state.str state.pos (index - state.pos))
-    else take_id state (index + 1)
+    else match state.str.[index] with
+    | 'a'..'z' -> take_id state (index + 1)
+    | '0'..'9' -> raise Invalid_token
+    | _ -> change_pos state index, ID(String.sub state.str state.pos (index - state.pos))
 
 let try_n state =
   if state.pos = state.len then None else

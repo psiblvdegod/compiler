@@ -1,7 +1,7 @@
 open Str
 open Token
 
-let parse_keyword = function
+let token_of_keyword = function
   | "while" -> Some WHILE 
   | "done"  -> Some DONE 
   | "var"   -> Some VAR
@@ -29,52 +29,70 @@ let parse_char = function
   | '/'     -> Some SLASH
   | _       -> None
 
-let is_identifier str = string_match (regexp "^[a-z]+$") str 0
+let is_digit c = (Char.code '0' <= Char.code c) && (Char.code c <= Char.code '9')
 
-let skip str len  = String.sub str len (String.length str - len)
+let is_letter c = (Char.code 'a' <= Char.code c) && (Char.code c <= Char.code 'z')
 
-let take str len = String.sub str 0 len
+type lexer_state = {
+  str : string;
+  len : int;
+  pos : int;
+}
 
-let try_one str =
-  if str = String.empty then None else
-  match parse_char str.[0] with
-  | Some token -> Some(token, skip str 1)
+let change_pos state new_pos = { str = state.str; len = state.len; pos = new_pos }
+
+let init_state input = { str = input; len = String.length input; pos = 0 }
+
+let try_1 state =
+  if state.pos = state.len then None else
+  match parse_char state.str.[state.pos] with
+  | Some token -> Some (change_pos state (state.pos + 1), token)
   | None -> None
 
-let try_two str =
-  let len = String.length str in
-  if len < 2 then None else
-    match take str 2 |> parse_two_chars with
-    | Some token -> Some(token, skip str 2)
-    | None -> None
+let try_2 state =
+  if state.len - state.pos < 2 then None else
+  match parse_two_chars (String.sub state.str state.pos 2) with
+  | Some token -> Some (change_pos state (state.pos + 2), token)
+  | None -> None
 
-let rec try_more str len =
-  if len = 0 then None else
-    let sub_str = take str len in
-    let rest = skip str len in
-    match int_of_string_opt sub_str with
-    | Some n -> Some(INT n, rest)
-    | None ->
-    if is_identifier sub_str then Some(ID sub_str, rest) else try_more str (len - 1)
+let rec take_int state index =
+  if index = state.len || (is_digit state.str.[index] = false)
+    then index
+    else take_int state (index + 1)
 
-let rec parse_loop str result =
-  let len = String.length str in
-  if len = 0 then result else
-  match try_two str with
-  | Some (token, rest) -> parse_loop rest (token :: result)
+let rec take_id state index =
+  if index = state.len || (is_letter state.str.[index] = false)
+    then index
+    else take_id state (index + 1)
+
+let try_n state =
+  if state.pos = state.len then None else
+  match state.str.[state.pos] with
+  | x when is_digit x ->
+    let index = take_int state (state.pos) in
+    Some (change_pos state index, INT(String.sub state.str state.pos (index - state.pos) |> int_of_string))
+  | x when is_letter x ->
+    let index = take_id state (state.pos) in
+    Some (change_pos state index, ID(String.sub state.str state.pos (index - state.pos)))
+  | _ -> None
+
+let rec parse_loop state acc =
+  if state.pos = state.len then acc else
+  match try_2 state with
+  | Some (state, token) -> parse_loop state (token :: acc)
   | None ->
-  (match try_one str with
-  | Some (token, rest) -> parse_loop rest (token :: result)
+  (match try_1 state with
+  | Some (state, token) -> parse_loop state (token :: acc)
   | None ->
-  (match try_more str len with
-  | Some (token, rest) -> parse_loop rest (token :: result)
+  (match try_n state with
+  | Some (state, token) -> parse_loop state (token :: acc)
   | None -> raise Invalid_token))
 
-let parse_str str =
-  match parse_keyword str with
+let parse_str state =
+  match token_of_keyword state.str with
   | Some token -> [token]
-  | None -> parse_loop str []
+  | None -> parse_loop state []
 
 let tokens_of_string str =
   let strs = split (regexp "[ \n\t\r]+") str in
-  List.map (fun s -> s |> parse_str |> List.rev) strs |> List.flatten
+  List.map (fun s -> s |> init_state |> parse_str |> List.rev) strs |> List.flatten

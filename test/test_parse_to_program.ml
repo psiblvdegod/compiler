@@ -7,7 +7,7 @@ let correct_input_assign_1 = "var a := b ; var c := 5 ;"
 
 let correct_input_assign_2 = "var a := 1 + b * 2 ; "
 
-let incorrect_input_assign_1 = "var a := while * for; "
+let incorrect_input_assign_1 = "var a := while * for ; "
 
 let incorrect_input_assign_2 = "var a * b := 5; "
 

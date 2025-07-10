@@ -69,21 +69,31 @@ let rec take_int state index =
 
 let rec take_str state index =
   if index = state.len
-    then change_pos state index, String.sub state.str state.pos (index - state.pos)
+    then
+      let new_state = change_pos state index in
+      let str = String.sub state.str state.pos (index - state.pos) in
+      match token_of_keyword str with
+      | Some token -> new_state, token
+      | None -> new_state, ID str
+
     else match state.str.[index] with
     | 'a'..'z' -> take_str state (index + 1)
     | '0'..'9' -> raise Invalid_token
-    | _ -> change_pos state index, String.sub state.str state.pos (index - state.pos)
+    | _ ->
+      let new_state = change_pos state index in
+      let str = String.sub state.str state.pos (index - state.pos) in
+      match token_of_keyword str with
+      | Some token ->
+        (match state.str.[index] with
+        | ' ' | '(' | '\n' | '\t' | '\r' -> new_state, token
+        | _ -> raise Invalid_token)
+      | None -> new_state, ID str
 
 let try_n state =
   if state.pos = state.len then None else
   match state.str.[state.pos] with
   | '0'..'9' -> Some (take_int state state.pos)
-  | 'a'..'z' ->
-    (let state, str = take_str state state.pos in
-    match token_of_keyword str with
-    | Some token -> Some (state, token)
-    | None -> Some (state, ID str))
+  | 'a'..'z' -> Some (take_str state state.pos)
   | _ -> None
 
 let rec parse_loop state acc =

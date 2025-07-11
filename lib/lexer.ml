@@ -38,8 +38,6 @@ let addi_pos state n = { str = state.str; len = state.len; pos = state.pos + n }
 
 let init_state input = { str = input; len = String.length input; pos = 0 }
 
-
-
 let rec token_of_int state index =
   let new_state = addi_pos state (index - state.pos) in
   let token = lazy (INT(String.sub state.str state.pos (index - state.pos) |> int_of_string)) in
@@ -90,17 +88,17 @@ let is_unsignificant state =
   | ' ' | '\n' | '\t' | '\r' -> true
   | _ -> false
 
-let rec parse_loop state acc =
+let rec tokenize_loop state acc =
   if state.pos = state.len then acc else
-  if is_unsignificant state then parse_loop (addi_pos state 1) acc else
+  if is_unsignificant state then tokenize_loop (addi_pos state 1) acc else
   match try_tokenize_two_chars state with
-  | Some (state, token) -> parse_loop state (token :: acc)
+  | Some (state, token) -> tokenize_loop state (token :: acc)
   | None ->
   match try_tokenize_char state with
-  | Some (state, token) -> parse_loop state (token :: acc)
+  | Some (state, token) -> tokenize_loop state (token :: acc)
   | None ->
   match try_tokenize_more state with
-  | Some (state, token) -> parse_loop state (token :: acc)
+  | Some (state, token) -> tokenize_loop state (token :: acc)
   | None -> raise Invalid_token
 
-let tokens_of_string str = parse_loop (init_state str) [] |> List.rev
+let tokenize str = tokenize_loop (init_state str) [] |> List.rev

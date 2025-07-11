@@ -67,34 +67,37 @@ let rec parse_comparison left = function
   
 let parse_comparison tokens = parse_comparison [] tokens
 
-
 (* parse_to_program and auxiliary functions *)
 
-let rec parse_to_program result tokens =
-  match tokens with
-  | [] -> List.rev result, []
+let rec parse_to_program acc = function
+  | [] -> List.rev acc, []
   | VAR :: rest ->
-    let assignment, rest = parse_assignment rest in
-    parse_to_program (assignment :: result) rest
+      let declaration, rest = parse_declaration [] rest in
+      parse_to_program (declaration :: acc) rest
   | WHILE :: rest ->
-    let condition, statements, rest = parse_while rest in
-    parse_to_program (While(condition, statements) :: result) rest
-  | DONE :: rest -> List.rev result, rest
+      let while_stmnt, rest = parse_while rest in
+      parse_to_program (while_stmnt :: acc) rest
+  | ID name :: rest ->
+      let assignment, rest = parse_assignment name rest in
+      parse_to_program (assignment :: acc) rest
+  | DONE :: rest -> List.rev acc, rest
   | _ -> raise Invalid_statement
 
 and parse_while tokens =
-  let (condition_tokens, statements_tokens) = split_by_token DO [] tokens in
+  let condition_tokens, statements_tokens = split_by_token DO [] tokens in
   let condition = parse_comparison condition_tokens in
-  let (statements, rest) = parse_to_program [] statements_tokens in
-  condition, statements, rest
+  let statements, rest = parse_to_program [] statements_tokens in
+    While(condition, statements), rest
 
-and parse_assignment = function
-  | ID name :: tokens ->
-    (match tokens with
-    | COLONEQQ :: tokens -> 
-      let statement_tokens, rest = split_by_token SEMICOLON [] tokens in
-        Assignment(name, parse_expression statement_tokens), rest
-    | _ -> raise Invalid_statement)
+and parse_assignment name = function
+  | COLONEQQ :: tokens -> 
+    let statement_tokens, rest = split_by_token SEMICOLON [] tokens in
+      Assignment(name, parse_expression statement_tokens), rest
+  | _ -> raise Invalid_statement
+
+and parse_declaration acc = function
+  | SEMICOLON :: rest -> Declaration acc, rest
+  | ID name :: rest -> parse_declaration (name :: acc) rest
   | _ -> raise Invalid_statement
 
 and split_by_token token left = function

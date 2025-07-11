@@ -14,6 +14,7 @@ type expression =
 and program = statement list
 
 and statement =
+  | Declaration of string list
   | Assignment of string * expression
   | While of comparison * program
   | If of comparison * program

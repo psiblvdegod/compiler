@@ -1,7 +1,7 @@
 open Alcotest
-open Parser.Parse_to_program
-open Lexer.Processing
-open Parser.Types
+open Compiler.Lexer
+open Compiler.Parser
+open Compiler.Types
 
 let correct_input_1 = "var a := fact 1;"
 let correct_input_2 = "
@@ -14,23 +14,23 @@ let incorrect_input_2 = "var a := fact for while do"
 
 let parse_to_program_passes_1 () =
   let expected_result = [Assignment("a", Call("fact", [Int 1]))] in 
-  let actual_result = tokens_of_string correct_input_1 |> parse_to_program in
+  let actual_result = tokenize correct_input_1 |> parse_to_program in
   check bool ("parse_to_program on: " ^ correct_input_1) (expected_result = actual_result) true
 
 let parse_to_program_passes_2 () =
   let expected_result = [While(Eq(Int 0, Int 0),[Assignment("a", Call("fact", [Int 1; Var "b"]))])] in 
-  let actual_result = tokens_of_string correct_input_2 |> parse_to_program in
+  let actual_result = tokenize correct_input_2 |> parse_to_program in
   check bool ("parse_to_program on: " ^ correct_input_2) (expected_result = actual_result) true
 
 let parse_to_program_passes_3 () =
   let expected_result =
     [Assignment("a", Add(Add(Call("f", [Var "a"; Int 1]), Call("f", [Int 1])), Var "f"))] in 
-  let actual_result = tokens_of_string correct_input_3 |> parse_to_program in
+  let actual_result = tokenize correct_input_3 |> parse_to_program in
   check bool ("parse_to_program on: " ^ correct_input_3) (expected_result = actual_result) true
 
 let parse_to_program_raises_1 () =
    try
-    ignore (tokens_of_string incorrect_input_1 |> parse_to_program)
+    ignore (tokenize incorrect_input_1 |> parse_to_program)
   with
   | Invalid_statement -> ()
   | Failure msg -> failwith msg
@@ -38,7 +38,7 @@ let parse_to_program_raises_1 () =
 
 let parse_to_program_raises_2 () =
    try
-    ignore (tokens_of_string incorrect_input_2 |> parse_to_program)
+    ignore (tokenize incorrect_input_2 |> parse_to_program)
   with
   | Invalid_expression -> ()
   | Failure msg -> failwith msg

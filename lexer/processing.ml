@@ -8,7 +8,7 @@ let token_of_keyword = function
   | "do"    -> Some DO 
   | _       -> None
 
-let parse_two_chars = function
+let token_of_two_chars = function
   | '<', '='    -> Some LEQ 
   | '>', '='    -> Some GEQ 
   | '!', '='    -> Some NEQ 
@@ -16,7 +16,7 @@ let parse_two_chars = function
   | ':', '='    -> Some COLONEQQ
   | _       -> None
 
-let parse_char = function
+let token_of_char = function
   | '<'     -> Some LT
   | '>'     -> Some GT
   | '('     -> Some LP 
@@ -38,69 +38,69 @@ let addi_pos state n = { str = state.str; len = state.len; pos = state.pos + n }
 
 let init_state input = { str = input; len = String.length input; pos = 0 }
 
-let try_1 state =
+
+
+let rec token_of_int state index =
+  let new_state = addi_pos state (index - state.pos) in
+  let token = lazy (INT(String.sub state.str state.pos (index - state.pos) |> int_of_string)) in
+  if index = state.len then new_state, token
+  else match state.str.[index] with
+  | '0'..'9' -> token_of_int state (index + 1)
+  | 'a'..'z' -> raise Invalid_token
+  | _ -> new_state, token
+
+let rec token_of_id state index =
+  let new_state = addi_pos state (index - state.pos) in
+  let str = String.sub state.str state.pos (index - state.pos) in
+  match token_of_keyword str with
+  | Some token ->
+    (if index = state.len then new_state, token else
+      match state.str.[index] with
+      | 'a'..'z' -> token_of_id state (index + 1)
+      | ' ' | '(' | ')' | '\n' | '\t' | '\r' -> new_state, token
+      | _ -> raise Invalid_token)
+  | None -> 
+    (if index = state.len then new_state, ID str else
+      match state.str.[index] with
+      | 'a'..'z' -> token_of_id state (index + 1)
+      | '0'..'9' -> raise Invalid_token
+      | _ -> new_state, ID str)
+
+let try_tokenize_char state =
   if state.pos = state.len then None else
-  match parse_char state.str.[state.pos] with
+  match token_of_char state.str.[state.pos] with
   | Some token -> Some (addi_pos state 1, token)
   | None -> None
 
-let try_2 state =
+let try_tokenize_two_chars state =
   if state.len - state.pos < 2 then None else
-  match parse_two_chars (state.str.[state.pos], state.str.[state.pos + 1]) with
+  match token_of_two_chars (state.str.[state.pos], state.str.[state.pos + 1]) with
   | Some token -> Some (addi_pos state 2, token)
   | None -> None
 
-let rec take_int state index =
-  (* contains updated state and token as lazy pair; cause otherwise program may crash *)
-  let result = lazy(addi_pos state (index - state.pos), INT(String.sub state.str state.pos (index - state.pos) |> int_of_string)) in
-  if index = state.len then result
-    else match state.str.[index] with
-    | '0'..'9' -> take_int state (index + 1)
-    | 'a'..'z' -> raise Invalid_token
-    | _ -> result
-
-
-let rec take_str state index =
-  let new_state = addi_pos state (index - state.pos) in
-  if index = state.len then
-      let str = String.sub state.str state.pos (index - state.pos) in
-      match token_of_keyword str with
-      | Some token -> new_state, token
-      | None -> new_state, ID str
-
-    else match state.str.[index] with
-    | 'a'..'z' -> take_str state (index + 1)
-    | '0'..'9' -> raise Invalid_token
-    | _ ->
-      let str = String.sub state.str state.pos (index - state.pos) in
-      match token_of_keyword str with
-      | Some token ->
-        (match state.str.[index] with
-        | ' ' | '(' | '\n' | '\t' | '\r' -> new_state, token
-        | _ -> raise Invalid_token)
-      | None -> new_state, ID str
-
-let try_n state =
+let try_tokenize_more state =
   if state.pos = state.len then None else
   match state.str.[state.pos] with
-  | '0'..'9' -> Some (take_int state state.pos |> Lazy.force)
-  | 'a'..'z' -> Some (take_str state state.pos)
+  | '0'..'9' -> let state, token = token_of_int state state.pos in Some (state, token |> Lazy.force)
+  | 'a'..'z' -> Some (token_of_id state state.pos)
   | _ -> None
 
-let is_unsignificant state = String.contains " \n\r\t" (state.str.[state.pos])
+let is_unsignificant state =
+  match state.str.[state.pos] with
+  | ' ' | '\n' | '\t' | '\r' -> true
+  | _ -> false
 
 let rec parse_loop state acc =
   if state.pos = state.len then acc else
   if is_unsignificant state then parse_loop (addi_pos state 1) acc else
-  match try_2 state with
+  match try_tokenize_two_chars state with
   | Some (state, token) -> parse_loop state (token :: acc)
   | None ->
-  (match try_1 state with
+  match try_tokenize_char state with
   | Some (state, token) -> parse_loop state (token :: acc)
   | None ->
-  (match try_n state with
+  match try_tokenize_more state with
   | Some (state, token) -> parse_loop state (token :: acc)
-  | None -> raise Invalid_token))
+  | None -> raise Invalid_token
 
-let tokens_of_string str =
-  parse_loop (init_state str) [] |> List.rev
+let tokens_of_string str = parse_loop (init_state str) [] |> List.rev

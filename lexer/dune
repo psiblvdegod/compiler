@@ -1,4 +1,0 @@
-(library
- (name lexer)
- (modules processing token)
- (libraries str))

@@ -5,7 +5,11 @@ let token_of_keyword = function
   | "done"  -> Some DONE 
   | "var"   -> Some VAR
   | "for"   -> Some FOR 
-  | "do"    -> Some DO 
+  | "do"    -> Some DO
+  | "if"    -> Some IF
+  | "then"  -> Some THEN
+  | "else"  -> Some ELSE
+  | "fi"    -> Some FI
   | _       -> None
 
 let token_of_two_chars = function
@@ -38,8 +42,6 @@ let addi_pos state n = { str = state.str; len = state.len; pos = state.pos + n }
 
 let init_state input = { str = input; len = String.length input; pos = 0 }
 
-
-
 let rec token_of_int state index =
   let new_state = addi_pos state (index - state.pos) in
   let token = lazy (INT(String.sub state.str state.pos (index - state.pos) |> int_of_string)) in
@@ -57,7 +59,7 @@ let rec token_of_id state index =
     (if index = state.len then new_state, token else
       match state.str.[index] with
       | 'a'..'z' -> token_of_id state (index + 1)
-      | ' ' | '(' | ')' | '\n' | '\t' | '\r' -> new_state, token
+      | ' ' | '(' | ')' | '\n' | '\t' | '\r' | ';' -> new_state, token
       | _ -> raise Invalid_token)
   | None -> 
     (if index = state.len then new_state, ID str else
@@ -90,17 +92,17 @@ let is_unsignificant state =
   | ' ' | '\n' | '\t' | '\r' -> true
   | _ -> false
 
-let rec parse_loop state acc =
+let rec tokenize_loop state acc =
   if state.pos = state.len then acc else
-  if is_unsignificant state then parse_loop (addi_pos state 1) acc else
+  if is_unsignificant state then tokenize_loop (addi_pos state 1) acc else
   match try_tokenize_two_chars state with
-  | Some (state, token) -> parse_loop state (token :: acc)
+  | Some (state, token) -> tokenize_loop state (token :: acc)
   | None ->
   match try_tokenize_char state with
-  | Some (state, token) -> parse_loop state (token :: acc)
+  | Some (state, token) -> tokenize_loop state (token :: acc)
   | None ->
   match try_tokenize_more state with
-  | Some (state, token) -> parse_loop state (token :: acc)
+  | Some (state, token) -> tokenize_loop state (token :: acc)
   | None -> raise Invalid_token
 
-let tokens_of_string str = parse_loop (init_state str) [] |> List.rev
+let tokenize str = tokenize_loop (init_state str) [] |> List.rev

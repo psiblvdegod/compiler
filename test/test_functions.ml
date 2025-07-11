@@ -1,64 +1,75 @@
 open Alcotest
-open Parser.Parse_to_program
-open Lexer.Processing
-open Parser.Types
+open Compiler.Lexer
+open Compiler.Parser
+open Compiler.Types
 
-let correct_input_1 = "var a := fact 1;"
-let correct_input_2 = "
-    while 0 == 0 do
-      var a := fact 1 b;
-    done"
-let correct_input_3 = "var a := f a 1 + f 1 + f;"
-let incorrect_input_1 = "var func a := 1"
-let incorrect_input_2 = "var a := fact for while do"
+let factorial_code = "
+var n acc;
+n := 5;
+acc := 1;
+while n > 1 do
+  acc := acc * n;
+  n := n - 1;
+done"
 
-let parse_to_program_passes_1 () =
-  let expected_result = [Assignment("a", Call("fact", [Int 1]))] in 
-  let actual_result = tokens_of_string correct_input_1 |> parse_to_program in
-  check bool ("parse_to_program on: " ^ correct_input_1) (expected_result = actual_result) true
+let fibonacci_code = "
+var a b n;
+n := 5;
+a := 0;
+b := 1;
+while n > 1 do
+  b := a + b; 
+  a := b - a;
+  n := n - 1;
+done"
 
-let parse_to_program_passes_2 () =
-  let expected_result = [While(Eq(Int 0, Int 0),[Assignment("a", Call("fact", [Int 1; Var "b"]))])] in 
-  let actual_result = tokens_of_string correct_input_2 |> parse_to_program in
-  check bool ("parse_to_program on: " ^ correct_input_2) (expected_result = actual_result) true
-
-let parse_to_program_passes_3 () =
-  let expected_result =
-    [Assignment("a", Add(Add(Call("f", [Var "a"; Int 1]), Call("f", [Int 1])), Var "f"))] in 
-  let actual_result = tokens_of_string correct_input_3 |> parse_to_program in
-  check bool ("parse_to_program on: " ^ correct_input_3) (expected_result = actual_result) true
-
-let parse_to_program_raises_1 () =
-   try
-    ignore (tokens_of_string incorrect_input_1 |> parse_to_program)
-  with
-  | Invalid_statement -> ()
-  | Failure msg -> failwith msg
-  | _ -> failwith ("expected exception did not occur\n" ^ "parse_to_program on: " ^ incorrect_input_1)
-
-let parse_to_program_raises_2 () =
-   try
-    ignore (tokens_of_string incorrect_input_2 |> parse_to_program)
-  with
-  | Invalid_expression -> ()
-  | Failure msg -> failwith msg
-  | _ -> failwith ("expected exception did not occur\n" ^ "parse_to_program on: " ^ incorrect_input_2)
-
-let tests_to_pass =
-  [ 
-    ("parse_to_program passes on:\n" ^ correct_input_1, `Quick, parse_to_program_passes_1);
-    ("parse_to_program passes on:\n" ^ correct_input_2, `Quick, parse_to_program_passes_2);
-    ("parse_to_program passes on:\n" ^ correct_input_3, `Quick, parse_to_program_passes_3);
+let factorial_ast =
+  [
+    Declaration(["n"; "acc"]);
+    Assignment("n", Int 5);
+    Assignment("acc", Int 1);
+    While(Gt(Var "n", Int 1),
+    [
+      Assignment("acc", Mul(Var "acc", Var "n"));
+      Assignment("n", Sub(Var "n", Int 1));
+    ]
+    )
   ]
 
-let tests_to_raise =
+let fibonacci_ast =
+  [
+    Declaration(["a"; "b"; "n"]);
+    Assignment("n", Int 5);
+    Assignment("a", Int 0);
+    Assignment("b", Int 1);
+    While(Gt(Var "n", Int 1),
+    [
+      Assignment("b", Add(Var "a", Var "b"));
+      Assignment("a", Sub(Var "b", Var "a"));
+      Assignment("n", Sub(Var "n", Int 1));
+    ]
+    )
+  ]
+
+let parse_to_program_on_factorial () =
+  let input = factorial_code in
+  let expected_result = factorial_ast in 
+  let actual_result = input |> tokenize |> parse_to_program in
+  check bool ("parse_to_program on: " ^ input) (expected_result = actual_result) true
+
+let parse_to_program_on_fibonacci () =
+  let input = fibonacci_code in
+  let expected_result = fibonacci_ast in 
+  let actual_result = input |> tokenize |> parse_to_program in
+  check bool ("parse_to_program on: " ^ input) (expected_result = actual_result) true
+
+let iterative_tests =
   [ 
-    ("parse_to_program raises on:\n" ^ incorrect_input_1, `Quick, parse_to_program_raises_1);
-    ("parse_to_program raises on:\n" ^ incorrect_input_2, `Quick, parse_to_program_raises_2);
+    ("parse_to_program on iterative factorial", `Quick, parse_to_program_on_factorial);
+    ("parse_to_program on iterative fibonacci", `Quick, parse_to_program_on_fibonacci);
   ]
 
 let () = run "test_functions.ml"
   [
-    ("tests_to_pass", tests_to_pass);
-    ("tests_to_raise", tests_to_raise);
+    ("iterative_tests", iterative_tests);
   ]

@@ -16,10 +16,10 @@ and program = statement list
 and statement =
   | Declaration of string list
   | Assignment of string * expression
-  | While of comparison * program
-  | If of comparison * program
+  | While of condition * program
+  | Ite of condition * program * program
 
-and comparison =
+and condition =
   | Eq of expression * expression
   | Neq of expression * expression
   | Lt of expression * expression

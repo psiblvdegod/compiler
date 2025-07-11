@@ -1,6 +1,13 @@
 open Token
 open Types
 
+let rec split_by_token token left = function
+  | [] -> List.rev left, []
+  | x :: right when x = token -> List.rev left, right
+  | x :: right -> split_by_token token (x :: left) right
+
+let split_by_token token token_list = split_by_token token [] token_list
+
 (* parse_expression and auxiliary functions *)
 
 let rec parse_expression tokens =
@@ -51,9 +58,9 @@ and parse_call name args rest =
         | [] -> Var name, rest
         | args2 -> Call(name, List.rev args2), rest
 
-(* parse_comparison and auxiliary functions *)
+(* parse_condition and auxiliary functions *)
 
-let rec parse_comparison left = function
+let rec parse_condition left = function
   | [] -> raise Invalid_expression
   | token :: right ->
     match token with
@@ -63,47 +70,62 @@ let rec parse_comparison left = function
     | GEQ -> Geq(left |> List.rev |> parse_expression, parse_expression right)
     | LT  -> Lt(left |> List.rev |> parse_expression, parse_expression right)
     | GT  -> Gt(left |> List.rev |> parse_expression, parse_expression right)
-    | other -> parse_comparison (other :: left) (right)
+    | other -> parse_condition (other :: left) (right)
   
-let parse_comparison tokens = parse_comparison [] tokens
+let parse_condition tokens = parse_condition [] tokens
 
 (* parse_to_program and auxiliary functions *)
 
 let rec parse_to_program acc = function
-  | [] -> List.rev acc, []
-  | VAR :: rest ->
-      let declaration, rest = parse_declaration [] rest in
-      parse_to_program (declaration :: acc) rest
-  | WHILE :: rest ->
-      let while_stmnt, rest = parse_while rest in
-      parse_to_program (while_stmnt :: acc) rest
-  | ID name :: rest ->
-      let assignment, rest = parse_assignment name rest in
-      parse_to_program (assignment :: acc) rest
-  | DONE :: rest -> List.rev acc, rest
-  | _ -> raise Invalid_statement
+    | [] -> List.rev acc, []
+    | VAR :: rest ->
+        let declaration, rest = parse_declaration [] rest in
+        parse_to_program (declaration :: acc) rest
+    | WHILE :: rest ->
+        let while_stmnt, rest = parse_while rest in
+        parse_to_program (while_stmnt :: acc) rest
+    | ID name :: rest ->
+        let assignment, rest = parse_assignment name rest in
+        parse_to_program (assignment :: acc) rest
+
+    | IF :: rest ->
+        let ite, rest = parse_ite rest in
+        parse_to_program (ite :: acc) rest
+    | ELSE :: rest -> List.rev acc, ELSE :: rest
+    | FI :: rest -> List.rev acc, FI :: rest
+
+    | DONE :: rest -> List.rev acc, rest
+    | _ -> raise Invalid_statement
 
 and parse_while tokens =
-  let condition_tokens, statements_tokens = split_by_token DO [] tokens in
-  let condition = parse_comparison condition_tokens in
+  let condition_tokens, statements_tokens = split_by_token DO tokens in
+  let condition = parse_condition condition_tokens in
   let statements, rest = parse_to_program [] statements_tokens in
     While(condition, statements), rest
 
 and parse_assignment name = function
   | COLONEQQ :: tokens -> 
-    let statement_tokens, rest = split_by_token SEMICOLON [] tokens in
+    let statement_tokens, rest = split_by_token SEMICOLON tokens in
       Assignment(name, parse_expression statement_tokens), rest
   | _ -> raise Invalid_statement
 
 and parse_declaration acc = function
-  | SEMICOLON :: rest -> Declaration acc, rest
+  | SEMICOLON :: rest -> Declaration (List.rev acc), rest
   | ID name :: rest -> parse_declaration (name :: acc) rest
   | _ -> raise Invalid_statement
 
-and split_by_token token left = function
-  | [] -> List.rev left, []
-  | x :: right when x = token -> List.rev left, right
-  | x :: right -> split_by_token token (x :: left) right
+and parse_ite tokens = 
+    let tokens_of_condition, then_tokens = split_by_token THEN tokens in
+    let condition = parse_condition tokens_of_condition in
+    let then_program, rest = parse_to_program [] then_tokens in
+    match rest with
+    | FI :: rest -> Ite(condition, then_program, []), rest
+    | ELSE :: rest ->
+        (let else_program, rest = parse_to_program [] rest in
+        match rest with
+        | FI :: rest -> Ite(condition, then_program, else_program), rest
+        | _ -> raise Invalid_statement)
+    | _ -> raise Invalid_statement
 
 let parse_to_program tokens =
   match parse_to_program [] tokens with

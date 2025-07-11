@@ -8,6 +8,10 @@ type token =
 | DO
 | DONE
 | VAR
+| IF
+| THEN
+| ELSE
+| FI
 | PLUS
 | MINUS
 | STAR

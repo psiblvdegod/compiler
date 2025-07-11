@@ -5,7 +5,11 @@ let token_of_keyword = function
   | "done"  -> Some DONE 
   | "var"   -> Some VAR
   | "for"   -> Some FOR 
-  | "do"    -> Some DO 
+  | "do"    -> Some DO
+  | "if"    -> Some IF
+  | "then"  -> Some THEN
+  | "else"  -> Some ELSE
+  | "fi"    -> Some FI
   | _       -> None
 
 let token_of_two_chars = function
@@ -55,7 +59,7 @@ let rec token_of_id state index =
     (if index = state.len then new_state, token else
       match state.str.[index] with
       | 'a'..'z' -> token_of_id state (index + 1)
-      | ' ' | '(' | ')' | '\n' | '\t' | '\r' -> new_state, token
+      | ' ' | '(' | ')' | '\n' | '\t' | '\r' | ';' -> new_state, token
       | _ -> raise Invalid_token)
   | None -> 
     (if index = state.len then new_state, ID str else

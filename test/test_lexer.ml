@@ -4,9 +4,11 @@ open Compiler.Token
 
 let correct_input_1 = "while for do done var"
 
-let correct_input_2 = "== != <= >= := () + - * / ;"
+let correct_input_2 = "== != <= >= := () + - * /;"
 
-let correct_input_3 = "var a := while * for ;"
+let correct_input_3 = "var a := while * for;"
+
+let correct_input_4 = "if a > 1 then a := b; else a := c; fi;"
 
 let incorrect_input_1 = "_]?"
 
@@ -26,6 +28,11 @@ let tokenize_passes_3 () =
   let expected_result = [VAR; ID "a"; COLONEQQ; WHILE; STAR; FOR; SEMICOLON] in
   let actual_result = tokenize correct_input_3 in
   check bool ("tokenize on: " ^ correct_input_3) (expected_result = actual_result) true
+
+let tokenize_passes_4 () =
+  let expected_result = [IF; ID "a"; GT; INT 1; THEN; ID "a"; COLONEQQ; ID "b"; SEMICOLON; ELSE; ID "a"; COLONEQQ; ID "c"; SEMICOLON; FI; SEMICOLON] in
+  let actual_result = tokenize correct_input_4 in
+  check bool ("tokenize on: " ^ correct_input_4) (expected_result = actual_result) true
 
 let tokenize_raises_1 () =
   try
@@ -48,6 +55,7 @@ let tests_to_pass =
     ("tokenize passes on: " ^ correct_input_1, `Quick, tokenize_passes_1);
     ("tokenize passes on: " ^ correct_input_2, `Quick, tokenize_passes_2);
     ("tokenize passes on: " ^ correct_input_3, `Quick, tokenize_passes_3);
+    ("tokenize passes on: " ^ correct_input_4, `Quick, tokenize_passes_4);
   ]
 
 let tests_to_raise =

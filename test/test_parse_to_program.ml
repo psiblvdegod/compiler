@@ -3,37 +3,37 @@ open Compiler.Lexer
 open Compiler.Parser
 open Compiler.Types
 
-let correct_input_assign_1 = "var a := b ; var c := 5 ;"
+let correct_input_assign_1 = "a := b; c := 5;"
 
-let correct_input_assign_2 = "var a := 1 + b * 2 ; "
+let correct_input_assign_2 = "a := 1 + b * 2;"
 
-let incorrect_input_assign_1 = "var a := while * for ; "
+let incorrect_input_assign_1 = "a := while * for ;"
 
-let incorrect_input_assign_2 = "var a * b := 5; "
+let incorrect_input_assign_2 = "a * b := 5; "
 
 let correct_input_while_1 = "
     while 1 <= 2 do
-        var a := b + c;
+      a := b + c;
     done"
 
 let correct_input_while_2 = "
   while 0 == 0 do
-    var a := 0;
+    a := 0;
     while 0 == 0 do
-      var a := 0;
+      a := 0;
     done
-    var a := 0;
+    a := 0;
   done
-  var a := 0;"
+  a := 0;"
 
 let incorrect_input_while_1 = "
   while 1 do
-    var a := 0;
+    a := 0;
   done"
 
 let incorrect_input_while_2 = "
   while 0 == 0 do
-    var a * b := 0;
+    a * b := 0;
   done"
 
 let on_assign_passes_1 () =

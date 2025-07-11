@@ -3,14 +3,14 @@ open Compiler.Lexer
 open Compiler.Parser
 open Compiler.Types
 
-let correct_input_1 = "var a := fact 1;"
+let correct_input_1 = "a := fact 1;"
 let correct_input_2 = "
     while 0 == 0 do
-      var a := fact 1 b;
+      a := fact 1 b;
     done"
-let correct_input_3 = "var a := f a 1 + f 1 + f;"
-let incorrect_input_1 = "var func a := 1"
-let incorrect_input_2 = "var a := fact for while do"
+let correct_input_3 = "a := f a 1 + f 1 + f;"
+let incorrect_input_1 = "func a := 1"
+let incorrect_input_2 = "a := fact for while do"
 
 let parse_to_program_passes_1 () =
   let expected_result = [Assignment("a", Call("fact", [Int 1]))] in 

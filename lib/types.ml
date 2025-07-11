@@ -15,11 +15,13 @@ and program = statement list
 
 and statement =
   | Assignment of string * expression
-  | While of condition * program
-  | If of condition * program
+  | While of comparison * program
+  | If of comparison * program
 
-and condition =
+and comparison =
   | Eq of expression * expression
   | Neq of expression * expression
+  | Lt of expression * expression
+  | Gt of expression * expression
   | Leq of expression * expression
   | Geq of expression * expression

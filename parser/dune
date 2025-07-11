@@ -1,4 +1,0 @@
-(library
- (name parser)
- (modules types parse_expression parse_condition parse_to_program)
- (libraries lexer))

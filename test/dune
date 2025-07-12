@@ -11,6 +11,10 @@
  (libraries alcotest compiler))
  
 (test
+ (name test_call)
+ (libraries alcotest compiler))
+
+(test
  (name test_condition)
  (libraries alcotest compiler))
 

@@ -57,7 +57,7 @@ let tests_to_raise =
     ("parse_to_program raises on:\n" ^ incorrect_input_2, `Quick, parse_to_program_raises_2);
   ]
 
-let () = run "test_functions.ml"
+let () = run "test_call.ml"
   [
     ("tests_to_pass", tests_to_pass);
     ("tests_to_raise", tests_to_raise);

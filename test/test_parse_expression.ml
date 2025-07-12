@@ -31,6 +31,31 @@ let parse_expression_passes_4 () =
   let actual_result = tokenize correct_input_4 |> parse_expression in
   check bool ("parse_expression on: " ^ correct_input_4) (actual_result = expected_result) true
 
+let correct_with_negative_1 =
+  "-a + b / c - -d"
+
+let correct_with_negative_2 = "-a * b"
+
+let correct_with_negative_3 = "-(-a) * -(b + -c) / -2"
+
+let parse_with_negative_1 () =
+  let input = correct_with_negative_1 in
+  let expected_result = Sub(Add(Neg(Var "a"), Div(Var "b", Var "c")), Neg(Var "d")) in
+  let actual_result = tokenize input |> parse_expression in
+  check bool ("parse_expression on: " ^ input) (actual_result = expected_result) true
+
+let parse_with_negative_2 () =
+  let input = correct_with_negative_2 in
+  let expected_result = Mul(Neg(Var "a"), Var "b") in
+  let actual_result = tokenize input |> parse_expression in
+  check bool ("parse_expression on: " ^ input) (actual_result = expected_result) true
+
+let parse_with_negative_3 () =
+  let input = correct_with_negative_3 in
+  let expected_result = Div(Mul(Neg(Neg(Var "a")), Neg(Add(Var "b", Neg(Var "c")))), Neg(Int 2)) in
+  let actual_result = tokenize input |> parse_expression in
+  check bool ("parse_expression on: " ^ input) (actual_result = expected_result) true
+
 let tests_to_pass =
   [
     ("parse_expression passes on: " ^ correct_input_1, `Quick, parse_expression_passes_1);
@@ -39,7 +64,15 @@ let tests_to_pass =
     ("parse_expression passes on: " ^ correct_input_4, `Quick, parse_expression_passes_4);
   ]
 
+let tests_for_Neg_to_pass =
+  [
+    ("parse_expression passes on: " ^ correct_with_negative_1, `Quick, parse_with_negative_1);
+    ("parse_expression passes on: " ^ correct_with_negative_2, `Quick, parse_with_negative_2);
+    ("parse_expression passes on: " ^ correct_with_negative_3, `Quick, parse_with_negative_3);
+  ]
+
 let () = run "test_parse_expression.ml"
   [
     ("parse_expression_passes", tests_to_pass);
+    ("tests_for_Neg_to_pass", tests_for_Neg_to_pass);
   ]

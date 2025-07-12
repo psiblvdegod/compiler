@@ -43,6 +43,8 @@ and parse_term = function
     | [] -> raise Invalid_expression
     | INT n :: rest -> Int n, rest
     | ID name :: rest -> parse_call name [] rest
+    | MINUS :: rest ->
+        let (expr, rest) = parse_term rest in Neg(expr), rest
     | LP :: rest ->
         let (expr, rest) = low_pr_expr_outer rest in
         (match rest with

@@ -22,3 +22,6 @@
  (name test_parse_expression)
  (libraries alcotest compiler))
 
+(test
+ (name test_ite)
+ (libraries alcotest compiler))

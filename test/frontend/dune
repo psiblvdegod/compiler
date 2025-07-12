@@ -1,27 +1,27 @@
 (test
- (name test_lexer)
+ (name lexer)
  (libraries alcotest compiler))
 
 (test
- (name test_parse_to_program)
+ (name parse_to_program)
  (libraries alcotest compiler))
 
 (test
- (name test_functions)
+ (name algorithms)
  (libraries alcotest compiler))
  
 (test
- (name test_call)
+ (name call)
  (libraries alcotest compiler))
 
 (test
- (name test_condition)
+ (name condition)
  (libraries alcotest compiler))
 
 (test
- (name test_parse_expression)
+ (name parse_expression)
  (libraries alcotest compiler))
 
 (test
- (name test_ite)
+ (name ite)
  (libraries alcotest compiler))

@@ -39,7 +39,7 @@ let tests_to_pass =
     ("parse_expression passes on: " ^ correct_input_4, `Quick, parse_expression_passes_4);
   ]
 
-let () = run "test_parser.ml"
+let () = run "test_parse_expression.ml"
   [
     ("parse_expression_passes", tests_to_pass);
   ]

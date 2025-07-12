@@ -71,7 +71,7 @@ let rec parse_condition left = function
     | LT  -> Lt(left |> List.rev |> parse_expression, parse_expression right)
     | GT  -> Gt(left |> List.rev |> parse_expression, parse_expression right)
     | other -> parse_condition (other :: left) (right)
-  
+
 let parse_condition tokens = parse_condition [] tokens
 
 (* parse_to_program and auxiliary functions *)

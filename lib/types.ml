@@ -5,6 +5,7 @@ exception Invalid_expression
 type expression =
   | Int of int
   | Var of string
+  | Neg of expression
   | Add of expression * expression
   | Div of expression * expression
   | Mul of expression * expression

@@ -63,13 +63,13 @@ let parse_to_program_on_fibonacci () =
   let actual_result = input |> tokenize |> parse_to_program in
   check bool ("parse_to_program on: " ^ input) (expected_result = actual_result) true
 
-let tests_to_pass =
+let iterative_tests =
   [ 
-    ("parse_to_program on factorial", `Quick, parse_to_program_on_factorial);
-    ("parse_to_program on fibonacci", `Quick, parse_to_program_on_fibonacci);
+    ("parse_to_program on iterative factorial", `Quick, parse_to_program_on_factorial);
+    ("parse_to_program on iterative fibonacci", `Quick, parse_to_program_on_fibonacci);
   ]
 
 let () = run "test_functions.ml"
   [
-    ("tests_to_pass", tests_to_pass);
+    ("iterative_tests", iterative_tests);
   ]

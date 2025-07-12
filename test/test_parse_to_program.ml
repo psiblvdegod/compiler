@@ -155,7 +155,7 @@ let tests_on_ite =
     ("parse_to_program passes on:\n" ^ correct_input_ite_2, `Quick, on_ite_passes_3);
   ]
 
-let () = run "test_program.ml"
+let () = run "test_parse_to_program.ml"
   [
     ("tests on assignment", tests_on_assignment);
     ("tests on while", tests_on_while);

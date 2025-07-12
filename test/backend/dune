@@ -1,0 +1,6 @@
+(library
+ (name backend)
+ (modules assignment)
+ (preprocess (pps ppx_expect))
+ (inline_tests)
+ (libraries base stdio compiler))

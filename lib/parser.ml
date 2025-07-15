@@ -87,8 +87,13 @@ let rec parse_to_program acc = function
         let while_stmnt, rest = parse_while rest in
         parse_to_program (while_stmnt :: acc) rest
     | ID name :: rest ->
-        let assignment, rest = parse_assignment name rest in
-        parse_to_program (assignment :: acc) rest
+        (match rest with
+        | COLONEQQ :: rest -> 
+            let assignment, rest = parse_assignment name rest in
+            parse_to_program (assignment :: acc) rest
+        | _ ->
+            let call, rest = parse_call_stmt name [] rest in
+            parse_to_program (call :: acc) rest)
 
     | IF :: rest ->
         let ite, rest = parse_ite rest in
@@ -105,11 +110,9 @@ and parse_while tokens =
   let statements, rest = parse_to_program [] statements_tokens in
     While(condition, statements), rest
 
-and parse_assignment name = function
-  | COLONEQQ :: tokens -> 
+and parse_assignment name tokens = 
     let statement_tokens, rest = split_by_token SEMICOLON tokens in
       Assignment(name, parse_expression statement_tokens), rest
-  | _ -> raise Invalid_statement
 
 and parse_declaration acc = function
   | SEMICOLON :: rest -> Declaration (List.rev acc), rest
@@ -127,6 +130,18 @@ and parse_ite tokens =
         match rest with
         | FI :: rest -> Ite(condition, then_program, else_program), rest
         | _ -> raise Invalid_statement)
+    | _ -> raise Invalid_statement
+
+and parse_call_stmt name acc = function
+| [] -> raise Invalid_statement
+| token :: rest ->
+    match token with
+    | SEMICOLON -> Call(name, List.rev acc), rest
+    | INT x -> parse_call_stmt name (Int x :: acc) rest
+    | ID x -> parse_call_stmt name (Var x :: acc) rest
+    | LP ->
+        let expr_tokens, rest = split_by_token RP rest in
+        parse_call_stmt name (parse_expression expr_tokens :: acc) rest
     | _ -> raise Invalid_statement
 
 let parse_to_program tokens =

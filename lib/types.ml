@@ -19,6 +19,7 @@ and statement =
   | Assignment of string * expression
   | While of condition * program
   | Ite of condition * program * program
+  | Call of string * expression list
 
 and condition =
   | Eq of expression * expression

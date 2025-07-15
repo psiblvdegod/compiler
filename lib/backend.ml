@@ -3,7 +3,7 @@ open Printf
 
 exception ReDeclaration_attempt
 exception Unbound_value
-exception Unsupported
+exception Not_supported
 
 type generator_state =
 {
@@ -12,7 +12,7 @@ type generator_state =
   sp : int;
 }
 
-let declaration_code = "addi sp, sp, -16\n"
+let alignment = 16
 
 let append_to_acc state str = { vars = state.vars; sp = state.sp; acc = state.acc ^ str }
 
@@ -24,83 +24,193 @@ let rec process_declaration state = function
   else let new_state =
   {
     vars = name :: state.vars;
-    sp = state.sp + 16;
-    acc = state.acc ^ declaration_code;
+    sp = state.sp + alignment;
+    acc = state.acc ^ (sprintf "addi sp, sp, %d\n" (-alignment));
   } in process_declaration new_state rest
 
-let index_of_var state name =
-  match List.find_index (fun x -> x = name) state.vars with
-  | None -> raise Unbound_value
-  | Some index -> index
+let rec index_of value acc = function
+| [] -> None
+| head :: rest -> if head = value then Some acc else index_of value (acc + 1) rest
 
-let assignment_const index value = 
-  sprintf "li t1, %d\nsw t1, %d(sp)\n" value (index * 16)
+let index_of value ls = index_of value 0 ls
+
+let index_of_var_or_raise state name =
+  match index_of name state.vars with
+  | Some index -> index
+  | None -> raise Unbound_value
 
 let lw_t1_by_index index =
-    sprintf "lw t1, %d(sp)\n" (index * 16)
-
-let sw_t1_by_index index =
-    sprintf "sw t1, %d(sp)\n" (index * 16)
+    sprintf "lw t1, %d(sp)\n" (index * alignment)
 
 let push value =
     sprintf
-"addi sp, sp, -16
+"addi sp, sp, %d
 li t1, %d
-sw t1, 0(sp)\n" value
+sw t1, 0(sp)\n" (-alignment) value
 
-let rec parse_expression state cnt = function
-  | Int value -> push value, cnt + 1
-  | Var name ->
-    let index = index_of_var state name in
-    lw_t1_by_index (index + cnt) ^ "addi sp, sp, -16\n" ^ "sw t1, 0(sp)\n", cnt + 1
-  | Add(left, right) ->
-    let left_str, left_cnt = parse_expression state cnt left in
-    let right_str, right_cnt = parse_expression state left_cnt right in
-    let lw_left = sprintf "lw t1, %d(sp)\n" (16 * (right_cnt - left_cnt)) in
-    let lw_right = "lw t2, 0(sp)\n" in
-    let sum = "add t1, t1, t2\n" in
-    let wipe_stack = sprintf "addi sp, sp, %d\n" (16 * (right_cnt - cnt - 1)) in
-    let push = "sw t1, 0(sp)\n" in
-    left_str ^ right_str ^ lw_left ^ lw_right ^ sum ^ wipe_stack ^ push, right_cnt - cnt
-  | _ -> raise Unsupported
+let generate_label () =
+  let length = 16 in
+  let buffer = Bytes.create length in
+  for i = 0 to length - 1 do
+    let random_letter = Char.chr (Char.code 'a' + Random.int 26) in
+    Bytes.set buffer i random_letter done;
+  buffer |> Bytes.to_string
+
+let apply_binop binop =
+sprintf
+"
+lw t2, (sp)
+lw t1, %d(sp)
+addi sp, sp, %d
+
+\n%s t1, t1, t2
+sw t1, (sp)\n
+" alignment alignment binop
+
+let rec parse_expressions state cnt = function
+  | [] -> state
+  | Int value :: rest -> parse_expressions (push value |> append_to_acc state) (cnt + 1) rest
+  | Var name :: rest ->
+    let index = index_of_var_or_raise state name in
+    let stm = lw_t1_by_index (index + cnt) ^ sprintf "addi sp, sp, %d\n" (-alignment) ^ "sw t1, (sp)\n" in
+    parse_expressions (append_to_acc state stm) (cnt + 1) rest
+  | Add(left, right) :: rest ->
+    let parse_operands = parse_expressions state cnt [left; right] in
+    let new_state = append_to_acc parse_operands (apply_binop "add") in
+    parse_expressions new_state (cnt + 1) rest
+  | Sub(left, right) :: rest ->
+    let parse_operands = parse_expressions state cnt [left; right] in
+    let new_state = append_to_acc parse_operands (apply_binop "sub") in
+    parse_expressions new_state (cnt + 1) rest
+  | Mul(left, right) :: rest ->
+    let parse_operands = parse_expressions state cnt [left; right] in
+    let new_state = append_to_acc parse_operands (apply_binop "mul") in
+    parse_expressions new_state (cnt + 1) rest
+  | Div(left, right) :: rest ->
+    let parse_operands = parse_expressions state cnt [left; right] in
+    let new_state = append_to_acc parse_operands (apply_binop "div") in
+    parse_expressions new_state (cnt + 1) rest
+  | _ -> raise Not_supported
+
+let parse_expressions state expressions = parse_expressions state 0 expressions
+
+let destruct_condition label = function
+  | Eq(left, right) -> left, right, sprintf "beq t1, t2, %s\n" label
+  | Neq(left, right) -> left, right, sprintf "bne t1, t2, %s\n" label
+  | Leq(left, right) -> left, right, sprintf "ble t1, t2, %s\n" label
+  | Geq(left, right) -> left, right, sprintf "bge t1, t2, %s\n" label
+  | Lt(left, right) -> left, right, sprintf "blt t1, t2, %s\n" label
+  | Gt(left, right) -> left, right, sprintf "bgt t1, t2, %s\n" label
+
+let lang_print state = function
+| [] -> Invalid_argument "at least 1 argument expected." |> raise
+| args ->
+  let rec loop cnt state =
+    if cnt = 0 then state else
+      let pop = "lw a0, (sp)\n" ^ sprintf "addi sp, sp, %d\n" alignment in
+      pop ^ "call print_number\n" |> append_to_acc state |> loop (cnt - 1) in
+  
+  parse_expressions state (List.rev args) |> loop (List.length args)
+
+let process_calling state name args =
+  match name with
+  | "print" -> lang_print state args
+  | _ -> raise Not_supported
 
 let process_assignment state dest expression =
-  let dest_index = index_of_var state dest in
-  let expr, _ = parse_expression state 0 expression in
-  (* if rest != 1 then failwith ";(" else *)
-  expr ^ "lw t1, 0(sp)\n" ^ "addi sp, sp, 16\n" ^ (sprintf "sw t1, %d(sp)\n" (16 * dest_index))
-  |> append_to_acc state
+  let dest_index = index_of_var_or_raise state dest in
+  let pop_and_sw = "lw t1, 0(sp)\n" ^ "addi sp, sp, 16\n" ^ (sprintf "sw t1, %d(sp)\n" (alignment * dest_index)) in
+  let new_state = parse_expressions state [expression] in
+  append_to_acc new_state pop_and_sw
 
-let rec assembly_of_program state = function
-  | [] -> state.acc
+let rec process_program state = function
+  | [] -> state
   | statement :: rest ->
   match statement with
   | Declaration names ->
     let new_state = process_declaration state names in
-    assembly_of_program new_state rest
+    process_program new_state rest
   | Assignment(name,expression) ->
     let new_state = process_assignment state name expression in
-    assembly_of_program new_state rest
-  | _ -> raise Unsupported
+    process_program new_state rest
+  | Call(name, args) ->
+    let new_state = process_calling state name args in
+    process_program new_state rest
+  | While(condition, program) ->
+    let new_state = process_while state condition program in
+    process_program new_state rest
+  | Ite(condition, then_program, else_program) ->
+    let new_state = process_ite state condition then_program else_program in
+    process_program new_state rest
+
+(*
+
+examle of (expected) code generated by process_while:
+
+while:
+
+<code generated to calculate comparison operands and put em to t1, t2>
+
+beq t1, t2, do
+j done
+do:
+
+<code generated by process_program>
+
+j while
+done:
+
+*)
+
+and process_while state condition statements =
+    let while_label = generate_label () in
+    let state = sprintf "%s:\n" while_label |> append_to_acc state in
+    let do_label = generate_label () in
+    let done_label = generate_label () in
+    let left, right, check = destruct_condition do_label condition in
+    let calc_operands = parse_expressions state [left; right] in
+    let pop_operands = "lw t2, (sp)\n" ^ (sprintf "lw t1, %d(sp)\n" alignment) ^ (sprintf "addi sp, sp, %d\n" (2 * alignment)) in
+    let state = pop_operands ^ check ^ (sprintf "j %s\n" done_label) ^ (sprintf "%s:\n" do_label) |> append_to_acc calc_operands in
+    let state = process_program state statements in
+    sprintf "j %s\n" while_label ^ sprintf "%s:\n" done_label |> append_to_acc state
+
+(*
+
+<generated condition evaluation>
+
+beq t1, t2, then
+j else
+
+then:
+<generated then branch>
+
+j fi
+else:
+<generated else branch>
+
+fi:
+
+*)
+and process_ite state condition then_program else_program =
+    let then_label = generate_label () in
+    let else_label = generate_label () in
+    let fi_label = generate_label () in
+    let left, right, check = destruct_condition then_label condition in
+    let calc_operands = parse_expressions state [left; right] in
+    let pop_operands = "lw t2, (sp)\n" ^ (sprintf "lw t1, %d(sp)\n" alignment) ^ (sprintf "addi sp, sp, %d\n" (2 * alignment)) in
+    let pre = pop_operands ^ check ^ sprintf "j %s\n" else_label ^ sprintf "%s:\n" then_label in
+    ((((append_to_acc calc_operands pre
+    |> process_program) @@ then_program
+    |> append_to_acc)   @@ sprintf "j %s\n" fi_label ^ sprintf "%s:\n" else_label
+    |> process_program) @@ else_program
+    |> append_to_acc) @@ sprintf "%s:\n" fi_label
 
 let init_state =
-  {
-    vars = [];
-    sp = 0;
-    acc =
-"
-.global _start
-.section .text
+{
+  vars = [];
+  sp = 0;
+  acc = String.empty
+}
 
-_start:
-"
-  }
-
-let exit_code =
-"
-li a7, 93
-li a0, 0
-ecall
-"
-
-let assembly_of_program program = assembly_of_program init_state program ^ exit_code
+let assembly_of_program program =
+  let state = process_program init_state program in state.acc

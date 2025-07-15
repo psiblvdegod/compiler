@@ -1,9 +1,0 @@
-var a b c;
-a := 100;
-b := 150;
-c := a - b;
-
-print a;
-print c;
-print b;
-print c;

@@ -1,7 +1,14 @@
+if [ -z "$REPO_ROOT" ]; then
+  echo "export REPO_ROOT=..."
+  exit 1
+fi
+
+cd $REPO_ROOT
+
 if [ "$#" -ne 2 ]; then
     echo "error: 2 arguments expected"
     echo "hint: run.sh <source.lang> <destination.exe>"
-    exit 1
+    exit 2
 fi
 
 compiler="./_build/default/bin/app.exe"
@@ -12,8 +19,7 @@ if [ ! -f $compiler ]; then
 
     if [ ! -f $compiler ]; then
         echo "error: compiler not found"
-        echo "hint: cd to repo root dir"
-        exit 2
+        exit 3
     fi
 fi
 
@@ -21,8 +27,7 @@ stdlib="./lib/stdlib.s"
 
 if [ ! -f $stdlib ]; then
     echo "error: stdlib.s not found"
-    echo "hint: cd to repo root dir"
-    exit 2
+    exit 3
 fi
 
 dune exec $compiler "$1" program.s

@@ -28,10 +28,16 @@ let rec process_declaration state = function
     acc = state.acc ^ (sprintf "addi sp, sp, %d\n" (-alignment));
   } in process_declaration new_state rest
 
-let index_of_var state name =
-  match List.find_index (fun x -> x = name) state.vars with
-  | None -> raise Unbound_value
+let rec index_of value acc = function
+| [] -> None
+| head :: rest -> if head = value then Some acc else index_of value (acc + 1) rest
+
+let index_of value ls = index_of value 0 ls
+
+let index_of_var_or_raise state name =
+  match index_of name state.vars with
   | Some index -> index
+  | None -> raise Unbound_value
 
 let lang_print state = function
 | [arg] ->
@@ -41,7 +47,7 @@ let lang_print state = function
 call print_number\n" x |> append_to_acc state
 
   | Var name ->
-    let index = index_of_var state name in sprintf
+    let index = index_of_var_or_raise state name in sprintf
 "addi t0, sp, %d
 lw a0, 0(t0)
 call print_number\n" (alignment * index) |> append_to_acc state
@@ -81,7 +87,7 @@ let rec parse_binop state cnt left right binop =
 and parse_expression state cnt = function
   | Int value -> push value, cnt + 1
   | Var name ->
-    let index = index_of_var state name in
+    let index = index_of_var_or_raise state name in
     lw_t1_by_index (index + cnt) ^ "addi sp, sp, -16\n" ^ "sw t1, 0(sp)\n", cnt + 1
   | Add(left, right) -> parse_binop state cnt left right "add"
   | Sub(left, right) -> parse_binop state cnt left right "sub"
@@ -90,7 +96,7 @@ and parse_expression state cnt = function
   | _ -> raise Not_supported
 
 let process_assignment state dest expression =
-  let dest_index = index_of_var state dest in
+  let dest_index = index_of_var_or_raise state dest in
   let expr, _ = parse_expression state 0 expression in
   (* if rest != 1 then failwith ";(" else *)
   expr ^ "lw t1, 0(sp)\n" ^ "addi sp, sp, 16\n" ^ (sprintf "sw t1, %d(sp)\n" (alignment * dest_index))

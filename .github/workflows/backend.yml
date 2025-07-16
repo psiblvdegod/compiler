@@ -1,0 +1,23 @@
+name: compiler-backend-tests
+
+on:
+  push:
+    branches: '**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: tests
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: |
+          sudo apt update
+          sudo apt install -y ocaml opam spike
+          opam init --disable-sandboxing -y
+          eval $(opam env)
+          opam install dune --yes
+          dune build
+          export REPO_ROOT="$PWD"
+          ./test/backend/test.sh

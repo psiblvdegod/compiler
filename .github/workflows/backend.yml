@@ -14,9 +14,7 @@ jobs:
 
       - run: |
           sudo apt update
-          sudo apt search spike
-          sudo apt search riscv
-          sudo apt install -y ocaml opam qemu-user
+          sudo apt install -y ocaml opam qemu-user binutils-riscv64-unknown-elf binutils-riscv64-linux-gnu
           opam init --disable-sandboxing -y
           eval $(opam env)
           opam install dune --yes

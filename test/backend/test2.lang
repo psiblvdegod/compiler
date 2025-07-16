@@ -1,8 +1,6 @@
-var a b c d;
+var a b c;
 
 a := 10;
 b := 20;
-c := 30;
-d := 30 / (a + b);
 
-print d;
+print (30 / (a + b));

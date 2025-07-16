@@ -11,7 +11,7 @@ for file in *; do
         expected_result=$(cat "./$file.expected")
 
         $REPO_ROOT/run.sh "$dir/$file" "$dir/program"
-        actual_result=$(spike pk ./program)
+        actual_result=$(qemu-riscv64 ./program)
 
         rm ./program
 

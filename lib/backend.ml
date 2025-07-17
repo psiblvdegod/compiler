@@ -94,13 +94,13 @@ let rec parse_expressions state cnt = function
 
 let parse_expressions state expressions = parse_expressions state 0 expressions
 
-let destruct_condition do_label = function
-  | Eq(left, right) -> left, right, sprintf "beq t1, t2, %s\n" do_label
-  | Neq(left, right) -> left, right, sprintf "bne t1, t2, %s\n" do_label
-  | Leq(left, right) -> left, right, sprintf "ble t1, t2, %s\n" do_label
-  | Geq(left, right) -> left, right, sprintf "bge t1, t2, %s\n" do_label
-  | Lt(left, right) -> left, right, sprintf "blt t1, t2, %s\n" do_label
-  | Gt(left, right) -> left, right, sprintf "bgt t1, t2, %s\n" do_label
+let destruct_condition label = function
+  | Eq(left, right) -> left, right, sprintf "beq t1, t2, %s\n" label
+  | Neq(left, right) -> left, right, sprintf "bne t1, t2, %s\n" label
+  | Leq(left, right) -> left, right, sprintf "ble t1, t2, %s\n" label
+  | Geq(left, right) -> left, right, sprintf "bge t1, t2, %s\n" label
+  | Lt(left, right) -> left, right, sprintf "blt t1, t2, %s\n" label
+  | Gt(left, right) -> left, right, sprintf "bgt t1, t2, %s\n" label
 
 let lang_print state = function
 | [] -> Invalid_argument "at least 1 argument expected." |> raise
@@ -139,7 +139,9 @@ let rec process_program state = function
   | While(condition, program) ->
     let new_state = process_while state condition program in
     process_program new_state rest
-  | _ -> raise Not_supported
+  | Ite(condition, then_program, else_program) ->
+    let new_state = process_ite state condition then_program else_program in
+    process_program new_state rest
 
 (*
 
@@ -171,6 +173,37 @@ and process_while state condition statements =
     let state = pop_operands ^ check ^ (sprintf "j %s\n" done_label) ^ (sprintf "%s:\n" do_label) |> append_to_acc calc_operands in
     let state = process_program state statements in
     sprintf "j %s\n" while_label ^ sprintf "%s:\n" done_label |> append_to_acc state
+
+(*
+
+<generated condition evaluation>
+
+beq t1, t2, then
+j else
+
+then:
+<generated then branch>
+
+j fi
+else:
+<generated else branch>
+
+fi:
+
+*)
+and process_ite state condition then_program else_program =
+    let then_label = generate_label () in
+    let else_label = generate_label () in
+    let fi_label = generate_label () in
+    let left, right, check = destruct_condition then_label condition in
+    let calc_operands = parse_expressions state [left; right] in
+    let pop_operands = "lw t2, (sp)\n" ^ (sprintf "lw t1, %d(sp)\n" alignment) ^ (sprintf "addi sp, sp, %d\n" (2 * alignment)) in
+    let pre = pop_operands ^ check ^ sprintf "j %s\n" else_label ^ sprintf "%s:\n" then_label in
+    ((((append_to_acc calc_operands pre
+    |> process_program) @@ then_program
+    |> append_to_acc)   @@ sprintf "j %s\n" fi_label ^ sprintf "%s:\n" else_label
+    |> process_program) @@ else_program
+    |> append_to_acc) @@ sprintf "%s:\n" fi_label
 
 let init_state =
 {

@@ -5,30 +5,22 @@ open Printf
 
 let _start_code =
 "
-.section .text
 .global _start
+.section .text
 
 _start:
-
-# generated code
-# =======================================
 
 "
 
 let _exit_code =
 "
-# =======================================
 
 call exit
 "
 
-let compile_and_save_as text path =
+let compile text =
     let generated_code = text |> tokenize |> parse_to_program |> assembly_of_program in
-    let result = _start_code ^ generated_code ^ _exit_code in
-    let destination = open_out path in
-    output_string destination result;
-    close_out destination;
-;;
+    _start_code ^ generated_code ^ _exit_code
 
 let clear_on_failure = function
     | 0 -> ()
@@ -50,9 +42,16 @@ let emulator =
 
 let stdlib = sprintf "%s/lib/stdlib.s" repo_root
 
+let save_as text path =
+    let oc = open_out path in
+    output_string oc text;
+    close_out oc;
+
+;;
+
 let run input =
     let destination = "./program.s" in
-    compile_and_save_as input destination;
+    (compile input |> save_as) destination;
     Sys.command @@ sprintf "riscv64-unknown-elf-as %s -o program.o" destination |> clear_on_failure;
     Sys.command @@ sprintf "riscv64-unknown-elf-as %s -o stdlib.o" stdlib |> clear_on_failure;
     Sys.command @@ sprintf "riscv64-unknown-elf-ld program.o stdlib.o -o program" |> clear_on_failure;

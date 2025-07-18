@@ -19,5 +19,7 @@ jobs:
           eval $(opam env)
           opam install dune --yes
           opam install alcotest --yes
+          opam install stdio --yes
           dune build
+          export REPO_ROOT="$PWD"
           dune test

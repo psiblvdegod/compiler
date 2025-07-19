@@ -60,21 +60,25 @@ and parse_call name args rest =
         | [] -> Var name, rest
         | args2 -> Call(name, List.rev args2), rest
 
-(* parse_condition and auxiliary functions *)
+(* parse_boolean_expression and auxiliary functions *)
 
-let rec parse_condition left = function
+let comparison_of_token_opt = function
+    | EQ  -> Some Eq
+    | NEQ -> Some Neq
+    | LT  -> Some Lt
+    | GT  -> Some Gt
+    | LEQ -> Some Leq
+    | GEQ -> Some Geq
+    | _ -> None
+
+let rec parse_boolean_expression left = function
   | [] -> raise Invalid_expression
   | token :: right ->
-    match token with
-    | EQ  -> Eq(left |> List.rev |> parse_expression, parse_expression right)
-    | NEQ -> Neq(left |> List.rev |> parse_expression, parse_expression right)
-    | LEQ -> Leq(left |> List.rev |> parse_expression, parse_expression right)
-    | GEQ -> Geq(left |> List.rev |> parse_expression, parse_expression right)
-    | LT  -> Lt(left |> List.rev |> parse_expression, parse_expression right)
-    | GT  -> Gt(left |> List.rev |> parse_expression, parse_expression right)
-    | other -> parse_condition (other :: left) (right)
+    match comparison_of_token_opt token with
+    | Some cmp -> Comparison(cmp, left |> List.rev |> parse_expression, parse_expression right)
+    | None -> parse_boolean_expression (token :: left) (right)
 
-let parse_condition tokens = parse_condition [] tokens
+let parse_boolean_expression tokens = parse_boolean_expression [] tokens
 
 (* parse_to_program and auxiliary functions *)
 
@@ -114,10 +118,10 @@ let rec parse_to_program acc = function
     | _ -> raise Invalid_statement
 
 and parse_while tokens =
-  let condition_tokens, statements_tokens = split_by_token DO tokens in
-  let condition = parse_condition condition_tokens in
+  let boolean_expression_tokens, statements_tokens = split_by_token DO tokens in
+  let boolean_expression = parse_boolean_expression boolean_expression_tokens in
   let statements, rest = parse_to_program [] statements_tokens in
-    While(condition, statements), rest
+    While(boolean_expression, statements), rest
 
 and parse_assignment name tokens = 
     let statement_tokens, rest = split_by_token SEMICOLON tokens in
@@ -129,15 +133,15 @@ and parse_declaration acc = function
   | _ -> raise Invalid_statement
 
 and parse_ite tokens = 
-    let tokens_of_condition, then_tokens = split_by_token THEN tokens in
-    let condition = parse_condition tokens_of_condition in
+    let tokens_of_boolean_expression, then_tokens = split_by_token THEN tokens in
+    let boolean_expression = parse_boolean_expression tokens_of_boolean_expression in
     let then_program, rest = parse_to_program [] then_tokens in
     match rest with
-    | FI :: rest -> Ite(condition, then_program, []), rest
+    | FI :: rest -> Ite(boolean_expression, then_program, []), rest
     | ELSE :: rest ->
         (let else_program, rest = parse_to_program [] rest in
         match rest with
-        | FI :: rest -> Ite(condition, then_program, else_program), rest
+        | FI :: rest -> Ite(boolean_expression, then_program, else_program), rest
         | _ -> raise Invalid_statement)
     | _ -> raise Invalid_statement
 

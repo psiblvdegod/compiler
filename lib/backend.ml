@@ -53,7 +53,7 @@ let generate_label () =
     Bytes.set buffer i random_letter done;
   buffer |> Bytes.to_string
 
-let apply_binop binop =
+let apply_binop mnemonic =
 sprintf
 "
 lw t2, (sp)
@@ -62,7 +62,7 @@ addi sp, sp, %d
 
 \n%s t1, t1, t2
 sw t1, (sp)\n
-" alignment alignment binop
+" alignment alignment mnemonic
 
 let mnemonic_of_binop = function
   | Add -> "add"
@@ -85,13 +85,28 @@ let rec parse_expressions state cnt = function
 
 let parse_expressions state expressions = parse_expressions state 0 expressions
 
-let destruct_condition label = function
-  | Eq(left, right) -> left, right, sprintf "beq t1, t2, %s\n" label
-  | Neq(left, right) -> left, right, sprintf "bne t1, t2, %s\n" label
-  | Leq(left, right) -> left, right, sprintf "ble t1, t2, %s\n" label
-  | Geq(left, right) -> left, right, sprintf "bge t1, t2, %s\n" label
-  | Lt(left, right) -> left, right, sprintf "blt t1, t2, %s\n" label
-  | Gt(left, right) -> left, right, sprintf "bgt t1, t2, %s\n" label
+let mnemonic_of_comparison = function
+    | Eq -> "beq"
+    | Neq -> "bne"
+    | Lt -> "blt"
+    | Gt -> "bgt"
+    | Leq -> "ble"
+    | Geq -> "bge"
+
+let parse_condition state bool_expr then_label else_label =
+    match bool_expr with
+    | true -> sprintf "j %s\n" then_label |> append_to_acc state
+    | false -> sprintf "j %s\n" else_label |> append_to_acc state
+    | Comparison(cmp, left, right) ->
+      let state = parse_expressions state [left; right] in
+      
+      sprintf "lw t1, %d(sp)\n" alignment ^
+      sprintf "lw t2, (sp)\n" ^
+      sprintf "addi sp, sp, %d\n" (2 * alignment) ^
+      sprintf "%s t1, t2, %s\n" (mnemonic_of_comparison cmp) then_label ^
+      sprintf "j %s\n" else_label
+      
+      |> append_to_acc state
 
 let lang_print state = function
 | [] -> Invalid_argument "at least 1 argument expected." |> raise
@@ -153,17 +168,19 @@ done:
 
 *)
 
-and process_while state condition statements =
+and process_while state bool_expr statements =
     let while_label = generate_label () in
-    let state = sprintf "%s:\n" while_label |> append_to_acc state in
     let do_label = generate_label () in
     let done_label = generate_label () in
-    let left, right, check = destruct_condition do_label condition in
-    let calc_operands = parse_expressions state [left; right] in
-    let pop_operands = "lw t2, (sp)\n" ^ (sprintf "lw t1, %d(sp)\n" alignment) ^ (sprintf "addi sp, sp, %d\n" (2 * alignment)) in
-    let state = pop_operands ^ check ^ (sprintf "j %s\n" done_label) ^ (sprintf "%s:\n" do_label) |> append_to_acc calc_operands in
+
+    let state = sprintf "%s:\n" while_label |> append_to_acc state in
+    let state = parse_condition state bool_expr do_label done_label in
+    let state = sprintf "%s:\n" do_label |>  append_to_acc state in
     let state = process_program state statements in
-    sprintf "j %s\n" while_label ^ sprintf "%s:\n" done_label |> append_to_acc state
+    let state = sprintf "j %s\n" while_label |> append_to_acc state in
+    
+    sprintf "%s:\n" done_label |> append_to_acc state
+    
 
 (*
 
@@ -182,19 +199,19 @@ else:
 fi:
 
 *)
-and process_ite state condition then_program else_program =
+and process_ite state bool_expr then_program else_program =
     let then_label = generate_label () in
     let else_label = generate_label () in
     let fi_label = generate_label () in
-    let left, right, check = destruct_condition then_label condition in
-    let calc_operands = parse_expressions state [left; right] in
-    let pop_operands = "lw t2, (sp)\n" ^ (sprintf "lw t1, %d(sp)\n" alignment) ^ (sprintf "addi sp, sp, %d\n" (2 * alignment)) in
-    let pre = pop_operands ^ check ^ sprintf "j %s\n" else_label ^ sprintf "%s:\n" then_label in
-    ((((append_to_acc calc_operands pre
-    |> process_program) @@ then_program
-    |> append_to_acc)   @@ sprintf "j %s\n" fi_label ^ sprintf "%s:\n" else_label
-    |> process_program) @@ else_program
-    |> append_to_acc) @@ sprintf "%s:\n" fi_label
+
+    let state = parse_condition state bool_expr then_label else_label in
+    let state = sprintf "%s:\n" then_label |>  append_to_acc state in
+    let state = process_program state then_program in
+    let state = sprintf "j %s\n" fi_label |> append_to_acc state in
+    let state = sprintf "%s:\n" else_label |>  append_to_acc state in
+    let state = process_program state else_program in
+
+    sprintf "%s:\n" fi_label |> append_to_acc state
 
 let init_state =
 {

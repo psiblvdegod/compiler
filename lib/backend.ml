@@ -64,6 +64,12 @@ addi sp, sp, %d
 sw t1, (sp)\n
 " alignment alignment binop
 
+let mnemonic_of_binop = function
+  | Add -> "add"
+  | Sub -> "sub"
+  | Mul -> "mul"
+  | Div -> "div"
+
 let rec parse_expressions state cnt = function
   | [] -> state
   | Int value :: rest -> parse_expressions (push value |> append_to_acc state) (cnt + 1) rest
@@ -71,21 +77,9 @@ let rec parse_expressions state cnt = function
     let index = index_of_var_or_raise state name in
     let stm = sprintf "lw t1, %d(sp)\n" ((index + cnt) * alignment) ^ sprintf "addi sp, sp, %d\n" (-alignment) ^ "sw t1, (sp)\n" in
     parse_expressions (append_to_acc state stm) (cnt + 1) rest
-  | Add(left, right) :: rest ->
+  | BinOp(binop, left, right) :: rest ->
     let parse_operands = parse_expressions state cnt [left; right] in
-    let new_state = append_to_acc parse_operands (apply_binop "add") in
-    parse_expressions new_state (cnt + 1) rest
-  | Sub(left, right) :: rest ->
-    let parse_operands = parse_expressions state cnt [left; right] in
-    let new_state = append_to_acc parse_operands (apply_binop "sub") in
-    parse_expressions new_state (cnt + 1) rest
-  | Mul(left, right) :: rest ->
-    let parse_operands = parse_expressions state cnt [left; right] in
-    let new_state = append_to_acc parse_operands (apply_binop "mul") in
-    parse_expressions new_state (cnt + 1) rest
-  | Div(left, right) :: rest ->
-    let parse_operands = parse_expressions state cnt [left; right] in
-    let new_state = append_to_acc parse_operands (apply_binop "div") in
+    let new_state = append_to_acc parse_operands (apply_binop @@ mnemonic_of_binop binop) in
     parse_expressions new_state (cnt + 1) rest
   | _ -> raise Not_supported
 

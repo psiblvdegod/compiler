@@ -24,19 +24,19 @@ and high_pr_expr_outer tokens =
 and low_pr_expr_inner left = function
     | PLUS :: rest ->
         let (right, rest) = high_pr_expr_outer rest in
-        low_pr_expr_inner (Add(left, right)) rest
+        low_pr_expr_inner (BinOp(Add, left, right)) rest
     | MINUS :: rest ->
         let (right, rest) = high_pr_expr_outer rest in
-        low_pr_expr_inner (Sub(left, right)) rest
+        low_pr_expr_inner (BinOp(Sub, left, right)) rest
     | other -> (left, other)
 
 and high_pr_expr_inner left = function
     | STAR :: rest ->
         let (right, rest) = parse_term rest in
-        high_pr_expr_inner (Mul(left, right)) rest
+        high_pr_expr_inner (BinOp(Mul, left, right)) rest
     | SLASH :: rest ->
         let (right, rest) = parse_term rest in
-        high_pr_expr_inner (Div(left, right)) rest
+        high_pr_expr_inner (BinOp(Div, left, right)) rest
     | other -> (left, other)
 
 and parse_term = function

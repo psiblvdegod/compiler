@@ -2,11 +2,6 @@ exception Invalid_statement
 
 exception Invalid_expression
 
-type binary_operation =
-  | Add
-  | Sub
-  | Div
-  | Mul
 
 type expression =
   | Int of int
@@ -15,19 +10,30 @@ type expression =
   | BinOp of binary_operation * expression * expression
   | Call of string * expression list
 
+and binary_operation =
+  | Add
+  | Sub
+  | Div
+  | Mul
+
 and program = statement list
 
 and statement =
   | Declaration of string list
   | Assignment of string * expression
-  | While of condition * program
-  | Ite of condition * program * program
+  | While of boolean_expression * program
+  | Ite of boolean_expression * program * program
   | Call of string * expression list
 
-and condition =
-  | Eq of expression * expression
-  | Neq of expression * expression
-  | Lt of expression * expression
-  | Gt of expression * expression
-  | Leq of expression * expression
-  | Geq of expression * expression
+and boolean_expression =
+  | true
+  | false
+  | Comparison of comparison * expression * expression
+
+and comparison =
+  | Eq
+  | Neq
+  | Lt
+  | Gt
+  | Leq
+  | Geq

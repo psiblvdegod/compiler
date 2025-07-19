@@ -2,14 +2,17 @@ exception Invalid_statement
 
 exception Invalid_expression
 
+type binary_operation =
+  | Add
+  | Sub
+  | Div
+  | Mul
+
 type expression =
   | Int of int
   | Var of string
   | Neg of expression
-  | Add of expression * expression
-  | Div of expression * expression
-  | Mul of expression * expression
-  | Sub of expression * expression
+  | BinOp of binary_operation * expression * expression
   | Call of string * expression list
 
 and program = statement list

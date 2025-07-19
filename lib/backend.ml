@@ -39,9 +39,6 @@ let index_of_var_or_raise state name =
   | Some index -> index
   | None -> raise Unbound_value
 
-let lw_t1_by_index index =
-    sprintf "lw t1, %d(sp)\n" (index * alignment)
-
 let push value =
     sprintf
 "addi sp, sp, %d
@@ -72,7 +69,7 @@ let rec parse_expressions state cnt = function
   | Int value :: rest -> parse_expressions (push value |> append_to_acc state) (cnt + 1) rest
   | Var name :: rest ->
     let index = index_of_var_or_raise state name in
-    let stm = lw_t1_by_index (index + cnt) ^ sprintf "addi sp, sp, %d\n" (-alignment) ^ "sw t1, (sp)\n" in
+    let stm = sprintf "lw t1, %d(sp)\n" ((index + cnt) * alignment) ^ sprintf "addi sp, sp, %d\n" (-alignment) ^ "sw t1, (sp)\n" in
     parse_expressions (append_to_acc state stm) (cnt + 1) rest
   | Add(left, right) :: rest ->
     let parse_operands = parse_expressions state cnt [left; right] in

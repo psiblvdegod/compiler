@@ -4,7 +4,6 @@ type token =
 | ID of string
 | INT of int
 | WHILE
-| FOR
 | DO
 | DONE
 | VAR

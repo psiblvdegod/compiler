@@ -4,7 +4,6 @@ let token_of_keyword = function
   | "while" -> Some WHILE 
   | "done"  -> Some DONE 
   | "var"   -> Some VAR
-  | "for"   -> Some FOR 
   | "do"    -> Some DO
   | "if"    -> Some IF
   | "then"  -> Some THEN
@@ -18,7 +17,7 @@ let token_of_two_chars = function
   | '!', '='    -> Some NEQ 
   | '=', '='    -> Some EQ 
   | ':', '='    -> Some COLONEQQ
-  | _       -> None
+  | _           -> None
 
 let token_of_char = function
   | '<'     -> Some LT

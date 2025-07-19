@@ -2,11 +2,11 @@ open Alcotest
 open Compiler.Lexer
 open Compiler.Token
 
-let correct_input_1 = "while for do done var"
+let correct_input_1 = "while do done var"
 
 let correct_input_2 = "== != <= >= := () + - * /;"
 
-let correct_input_3 = "var a := while * for;"
+let correct_input_3 = "var a := while * do;"
 
 let correct_input_4 = "if a > 1 then a := b; else a := c; fi;"
 
@@ -15,7 +15,7 @@ let incorrect_input_1 = "_]?"
 let incorrect_input_2 = String.empty
 
 let tokenize_passes_1 () =
-  let expected_result = [WHILE; FOR; DO; DONE; VAR] in
+  let expected_result = [WHILE; DO; DONE; VAR] in
   let actual_result = tokenize correct_input_1 in
   check bool ("tokenize on: " ^ correct_input_1) (expected_result = actual_result) true
 
@@ -25,7 +25,7 @@ let tokenize_passes_2 () =
   check bool ("tokenize on: " ^ correct_input_2) (expected_result = actual_result) true
 
 let tokenize_passes_3 () =
-  let expected_result = [VAR; ID "a"; COLONEQQ; WHILE; STAR; FOR; SEMICOLON] in
+  let expected_result = [VAR; ID "a"; COLONEQQ; WHILE; STAR; DO; SEMICOLON] in
   let actual_result = tokenize correct_input_3 in
   check bool ("tokenize on: " ^ correct_input_3) (expected_result = actual_result) true
 

@@ -28,7 +28,7 @@ let factorial_ast =
     Declaration(["n"; "acc"]);
     Assignment("n", Int 5);
     Assignment("acc", Int 1);
-    While(Gt(Var "n", Int 1),
+    While(Comparison(Gt, Var "n", Int 1),
     [
       Assignment("acc", BinOp(Mul, Var "acc", Var "n"));
       Assignment("n", BinOp(Sub, Var "n", Int 1));
@@ -42,7 +42,7 @@ let fibonacci_ast =
     Assignment("n", Int 5);
     Assignment("a", Int 0);
     Assignment("b", Int 1);
-    While(Gt(Var "n", Int 1),
+    While(Comparison(Gt, Var "n", Int 1),
     [
       Assignment("b", BinOp(Add, Var "a", Var "b"));
       Assignment("a", BinOp(Sub, Var "b", Var "a"));

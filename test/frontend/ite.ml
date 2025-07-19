@@ -13,18 +13,18 @@ while a != 0 do
 done"
 
 let on_ite_passes_1 () =
-  let expected_result = [Ite(Eq(Var "a", Int 0), [Assignment("a", Int 1)], [])] in
+  let expected_result = [Ite(Comparison(Eq, Var "a", Int 0), [Assignment("a", Int 1)], [])] in
   let actual_result = tokenize correct_input_ite_1 |> parse_to_program in
   check bool ("parse_to_program on: " ^ correct_input_ite_1) (actual_result = expected_result) true
 
 let on_ite_passes_2 () =
-  let expected_result = [Ite(Neq(Var "a", Var "a"), [Declaration(["a"; "b"; "c"])], [Declaration(["abc"])])] in
+  let expected_result = [Ite(Comparison(Neq, Var "a", Var "a"), [Declaration(["a"; "b"; "c"])], [Declaration(["abc"])])] in
   let actual_result = tokenize correct_input_ite_2 |> parse_to_program in
   check bool ("parse_to_program on: " ^ correct_input_ite_2) (actual_result = expected_result) true
 
 let on_ite_passes_3 () =
   let expected_result =
-    [While(Neq(Var "a", Int 0), [Ite(Lt(Var "a", Int 0), [Assignment("a", BinOp(Add, Var "a", Int 1))], [Assignment("a", BinOp(Sub, Var "a", Int 1))])])] in
+    [While(Comparison(Neq, Var "a", Int 0), [Ite(Comparison(Lt, Var "a", Int 0), [Assignment("a", BinOp(Add, Var "a", Int 1))], [Assignment("a", BinOp(Sub, Var "a", Int 1))])])] in
   let actual_result = tokenize correct_input_ite_3 |> parse_to_program in
   check bool ("parse_to_program on: " ^ correct_input_ite_3) (actual_result = expected_result) true
 
@@ -49,13 +49,13 @@ fi"
 
 let nested_ite_ast =
   [
-    Ite(Eq(Var "a", Int 0),
-      [Ite(Eq(Var "b", Int 0),
+    Ite(Comparison(Eq, Var "a", Int 0),
+      [Ite(Comparison(Eq, Var "b", Int 0),
         [
           Assignment("c", Int 0);
           Assignment("d", Int 0)
         ], [])],
-      [Ite(Eq(Var "g", Int 0),
+      [Ite(Comparison(Eq, Var "g", Int 0),
         [
           Assignment("h", Int 0)
         ], [])])

@@ -18,7 +18,7 @@ let parse_to_program_passes_1 () =
   check bool ("parse_to_program on: " ^ correct_input_1) (expected_result = actual_result) true
 
 let parse_to_program_passes_2 () =
-  let expected_result = [While(Eq(Int 0, Int 0),[Assignment("a", Call("fact", [Int 1; Var "b"]))])] in 
+  let expected_result = [While(Comparison(Eq, Int 0, Int 0),[Assignment("a", Call("fact", [Int 1; Var "b"]))])] in 
   let actual_result = tokenize correct_input_2 |> parse_to_program in
   check bool ("parse_to_program on: " ^ correct_input_2) (expected_result = actual_result) true
 

@@ -1,3 +1,3 @@
-open Token
+open Types
 
-val tokenize : string -> token list
+val tokenize : string -> (token list, lexer_error) result

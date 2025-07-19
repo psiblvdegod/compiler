@@ -1,8 +1,9 @@
-open Token
 open Types
 
-val parse_to_program : token list -> program
+val parse_expression : token list -> (expression, parser_error) result
 
-val parse_condition : token list -> condition
+;;
 
-val parse_expression : token list -> expression
+val parse_to_program : token list -> (program, parser_error) result
+
+;;

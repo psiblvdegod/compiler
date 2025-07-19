@@ -17,7 +17,7 @@ jobs:
           sudo apt install -y ocaml opam qemu-user binutils-riscv64-unknown-elf
           opam init --disable-sandboxing -y
           eval $(opam env)
-          opam install dune alcotest ppx_expect --yes
+          opam install dune alcotest ppx_expect ppx_deriving --yes
           dune build
           export REPO_ROOT="$PWD"
           export EMULATOR="qemu-riscv64"

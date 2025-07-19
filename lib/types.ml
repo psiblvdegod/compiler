@@ -1,30 +1,158 @@
-exception Invalid_statement
+(* lexer *)
 
-exception Invalid_expression
+type lexer_error =
+| Invalid_token
+| Input_is_empty
+[@@deriving show { with_path = false }]
+
+type token =
+| STR of string
+| INT of int
+| TRUE
+| FALSE
+
+| ID of string
+
+| VAR
+| COLONEQQ
+
+| WHILE
+| DO
+| DONE
+
+| IF
+| THEN
+| ELSE
+| FI
+
+| PLUS
+| MINUS
+| STAR
+| SLASH
+| AND
+| OR
+| CARET
+| TILDE
+| BANG
+
+| EQ
+| NEQ
+| LEQ
+| GEQ
+| LT
+| GT
+
+| LP
+| RP
+| SEMI
+[@@deriving show { with_path = false }]
+
+(* parser *)
+
+type parser_error =
+  | Invalid_expression
+  | Invalid_statement
+[@@deriving show { with_path = false }]
 
 type expression =
-  | Int of int
   | Var of string
-  | Neg of expression
-  | Add of expression * expression
-  | Div of expression * expression
-  | Mul of expression * expression
-  | Sub of expression * expression
-  | Call of string * expression list
 
-and program = statement list
+  | Int of int
+  | Bool of bool
+  | Str of string
+
+  | BinOp of binary_operation * expression * expression
+  | UnOp of unary_operation * expression
+[@@deriving show { with_path = false }]
+
+and unary_operation =
+  | Neg
+  | Rev
+  | Not
+[@@deriving show { with_path = false }]
+
+and binary_operation =
+  | Mul
+  | Div
+
+  | Add
+  | Sub
+  | Cat
+  | And
+  | Or
+
+  | Eq
+  | Neq
+  | Leq
+  | Geq
+  | Lt
+  | Gt
+[@@deriving show { with_path = false }]
 
 and statement =
   | Declaration of string list
-  | Assignment of string * expression
-  | While of condition * program
-  | Ite of condition * program * program
-  | Call of string * expression list
 
-and condition =
-  | Eq of expression * expression
-  | Neq of expression * expression
-  | Lt of expression * expression
-  | Gt of expression * expression
-  | Leq of expression * expression
-  | Geq of expression * expression
+  | Assignment of string * expression
+  | While of expression * program
+  | Ite of expression * program * program
+
+  | Definition of string * string list * program
+  | Call of string * expression list
+[@@deriving show { with_path = false }]
+
+and program = statement list
+[@@deriving show { with_path = false }]
+
+(* inferencer *)
+
+type inferencer_error =
+    | Already_declared
+    | Was_Not_declared
+    | Was_Not_defined
+    | Was_Not_assigned
+    | Operand_type_dismatch
+    | Expression_type_dismatch
+    | Function_type_dismatch
+    | Already_specified
+[@@deriving show { with_path = false }]
+
+type expression_type = | TInt | TBool | TStr | TNull
+[@@deriving show { with_path = false }]
+
+and scope = 
+{
+    vars : (string * expression_type) list;
+    funcs: (string * expression_type * (expression_type list)) list;
+}
+[@@deriving show { with_path = false }]
+
+type typed_expression =
+  | Type_Int of int base_typed_expr
+  | Type_Bool of bool base_typed_expr
+  | Type_Str of string base_typed_expr
+
+and 'a base_typed_expr =
+  | Typed_value of 'a
+  | Typed_var of string
+  | Typed_unop of unary_operation * typed_expression
+  | Typed_binop of binary_operation * typed_expression * typed_expression
+
+and typed_statement =
+  | Typed_Declaration of string list
+
+  | Typed_Assignment of string * typed_expression
+  | Typed_While of typed_expression * typed_program
+  | Typed_Ite of typed_expression * typed_program * typed_program
+
+  | Typed_Definition of string * string list * typed_program
+  | Typed_Call of string * typed_expression list
+[@@deriving show { with_path = false }]
+
+and typed_program = (typed_statement * scope) list
+[@@deriving show { with_path = false }]
+
+(* generator *)
+
+type generator_error =
+| Not_implemented
+[@@deriving show { with_path = false }]

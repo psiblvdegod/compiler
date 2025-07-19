@@ -1,71 +1,123 @@
-open Alcotest
+open Compiler.Types
 open Compiler.Lexer
-open Compiler.Token
 
-let correct_input_1 = "while for do done var"
+let pp_tokens text =
+  match tokenize text with
+  | Error err -> print_endline ("Error: " ^ show_lexer_error err)
+  | Ok(tokens) -> List.iter (fun s -> print_endline (show_token s)) tokens
+
+let correct_input_1 = "while do done var"
+
+let%expect_test "test on correct input 1" =
+  pp_tokens correct_input_1;
+  [%expect {|
+    WHILE
+    DO
+    DONE
+    VAR
+    |}];
+
+;;
 
 let correct_input_2 = "== != <= >= := () + - * /;"
 
-let correct_input_3 = "var a := while * for;"
+let%expect_test "test on correct input 2" =
+  pp_tokens correct_input_2;
+  [%expect {|
+    EQ
+    NEQ
+    LEQ
+    GEQ
+    COLONEQQ
+    LP
+    RP
+    PLUS
+    MINUS
+    STAR
+    SLASH
+    SEMI
+    |}];
+
+;;
+
+let correct_input_3 = "var a := while * do;"
+
+let%expect_test "test on correct input 3" =
+  pp_tokens correct_input_3;
+  [%expect {|
+    VAR
+    (ID "a")
+    COLONEQQ
+    WHILE
+    STAR
+    DO
+    SEMI
+    |}];
+
+;;
 
 let correct_input_4 = "if a > 1 then a := b; else a := c; fi;"
 
+let%expect_test "test on correct input 4" =
+  pp_tokens correct_input_4;
+  [%expect {|
+    IF
+    (ID "a")
+    GT
+    (INT 1)
+    THEN
+    (ID "a")
+    COLONEQQ
+    (ID "b")
+    SEMI
+    ELSE
+    (ID "a")
+    COLONEQQ
+    (ID "c")
+    SEMI
+    FI
+    SEMI
+    |}];
+
+;;
+
 let incorrect_input_1 = "_]?"
+
+let%expect_test "test on incorrect input 1" =
+  pp_tokens incorrect_input_1;
+  [%expect {| Error: Invalid_token |}];
+
+;;
 
 let incorrect_input_2 = String.empty
 
-let tokenize_passes_1 () =
-  let expected_result = [WHILE; FOR; DO; DONE; VAR] in
-  let actual_result = tokenize correct_input_1 in
-  check bool ("tokenize on: " ^ correct_input_1) (expected_result = actual_result) true
+let%expect_test "test on incorrect input 2" =
+  pp_tokens incorrect_input_2;
+  [%expect {| Error: Input_is_empty |}];
 
-let tokenize_passes_2 () =
-  let expected_result = [EQ; NEQ; LEQ; GEQ; COLONEQQ; LP; RP; PLUS; MINUS; STAR; SLASH; SEMICOLON] in
-  let actual_result = tokenize correct_input_2 in
-  check bool ("tokenize on: " ^ correct_input_2) (expected_result = actual_result) true
+;;
 
-let tokenize_passes_3 () =
-  let expected_result = [VAR; ID "a"; COLONEQQ; WHILE; STAR; FOR; SEMICOLON] in
-  let actual_result = tokenize correct_input_3 in
-  check bool ("tokenize on: " ^ correct_input_3) (expected_result = actual_result) true
+let incorrect_input_3 = "\"fdf"
 
-let tokenize_passes_4 () =
-  let expected_result = [IF; ID "a"; GT; INT 1; THEN; ID "a"; COLONEQQ; ID "b"; SEMICOLON; ELSE; ID "a"; COLONEQQ; ID "c"; SEMICOLON; FI; SEMICOLON] in
-  let actual_result = tokenize correct_input_4 in
-  check bool ("tokenize on: " ^ correct_input_4) (expected_result = actual_result) true
+let%expect_test "test on incorrect input 3" =
+  pp_tokens incorrect_input_3;
+  [%expect {| Error: Invalid_token |}];
 
-let tokenize_raises_1 () =
-  try
-    ignore (tokenize incorrect_input_1)
-  with
-  | Invalid_token -> ()
-  | Failure msg -> failwith msg
-  | _ -> failwith ("expected exception did not occur\n" ^ "tokenize on: " ^ incorrect_input_1)
+;;
 
-let tokenize_raises_2 () =
-  try
-    ignore (tokenize incorrect_input_2)
-  with
-  | Invalid_token -> ()
-  | Failure msg -> failwith msg
-  | _ -> failwith ("expected exception did not occur\n" ^ "tokenize on: " ^ incorrect_input_2)
+let correct_input_5 = "~a and -b or !c"
 
-let tests_to_pass =
-  [
-    ("tokenize passes on: " ^ correct_input_1, `Quick, tokenize_passes_1);
-    ("tokenize passes on: " ^ correct_input_2, `Quick, tokenize_passes_2);
-    ("tokenize passes on: " ^ correct_input_3, `Quick, tokenize_passes_3);
-    ("tokenize passes on: " ^ correct_input_4, `Quick, tokenize_passes_4);
-  ]
+let%expect_test "test on correct input 5" =
+  pp_tokens correct_input_5;
+  [%expect {|
+    TILDE
+    (ID "a")
+    AND
+    MINUS
+    (ID "b")
+    OR
+    BANG
+    (ID "c")
+    |}];
 
-let tests_to_raise =
-  [
-    ("tokenize raises on: " ^ incorrect_input_1, `Quick, tokenize_raises_1);
-    ("tokenize raises on: String.empty", `Quick, tokenize_raises_2);
-  ]
-
-let () = run "test_lexer.ml"
-  [
-    ("tests_to_pass", tests_to_pass);
-    ("tests_to_raise", tests_to_raise);
-  ]
+;;

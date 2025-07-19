@@ -1,27 +1,7 @@
-(test
- (name lexer)
- (libraries alcotest compiler))
-
-(test
- (name parse_to_program)
- (libraries alcotest compiler))
-
-(test
- (name algorithms)
- (libraries alcotest compiler))
- 
-(test
- (name call)
- (libraries alcotest compiler))
-
-(test
- (name condition)
- (libraries alcotest compiler))
-
-(test
- (name parse_expression)
- (libraries alcotest compiler))
-
-(test
- (name ite)
- (libraries alcotest compiler))
+(library
+ (name frontend_tests)
+ (modules lexer parser)
+ (libraries base stdio ppx_expect compiler)
+ (preprocess
+  (pps ppx_expect ppx_deriving.show))
+ (inline_tests))

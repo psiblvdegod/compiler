@@ -9,12 +9,12 @@ let incorrect_input_1 = "a == b == c"
 let incorrect_input_2 = "a <"
 
 let parse_condition_passes_1 () =
-  let expected_result = Eq(Var "a", Add(Var "b", Int 6)) in
+  let expected_result = Eq(Var "a", BinOp(Add, Var "b", Int 6)) in
   let actual_result = tokenize correct_input_1 |> parse_condition in
   check bool ("parse_condition on: " ^ correct_input_1) (actual_result = expected_result) true
 
 let parse_condition_passes_2 () =
-  let expected_result = Geq(Var "qwe", Div(Var "asd", Var "zxc")) in
+  let expected_result = Geq(Var "qwe", BinOp(Div, Var "asd", Var "zxc")) in
   let actual_result = tokenize correct_input_2 |> parse_condition in
   check bool ("parse_condition on: " ^ correct_input_2) (actual_result = expected_result) true
 

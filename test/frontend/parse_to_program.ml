@@ -42,7 +42,7 @@ let on_assign_passes_1 () =
   check bool ("parse_to_program on: " ^ correct_input_assign_1) (actual_result = expected_result) true
 
 let on_assign_passes_2 () =
-  let expected_result = [Assignment("a", Add(Int 1, Mul(Var "b", Int 2)))] in
+  let expected_result = [Assignment("a", BinOp(Add, Int 1, BinOp(Mul, Var "b", Int 2)))] in
   let actual_result = tokenize correct_input_assign_2 |> parse_to_program in
   check bool ("parse_to_program on: " ^ correct_input_assign_2) (actual_result = expected_result) true
 
@@ -73,7 +73,7 @@ let tests_on_assignment =
 
 let on_while_passes_1 () =
   let expected_result =
-    [While(Leq(Int 1, Int 2),[Assignment("a", Add(Var "b", Var "c"));];)] in
+    [While(Leq(Int 1, Int 2),[Assignment("a", BinOp(Add, Var "b", Var "c"));];)] in
   let actual_result = tokenize correct_input_while_1 |> parse_to_program in
   check bool ("parse_to_program on:\n" ^ correct_input_while_1) (actual_result = expected_result) true
 

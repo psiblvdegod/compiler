@@ -30,8 +30,8 @@ let factorial_ast =
     Assignment("acc", Int 1);
     While(Gt(Var "n", Int 1),
     [
-      Assignment("acc", Mul(Var "acc", Var "n"));
-      Assignment("n", Sub(Var "n", Int 1));
+      Assignment("acc", BinOp(Mul, Var "acc", Var "n"));
+      Assignment("n", BinOp(Sub, Var "n", Int 1));
     ]
     )
   ]
@@ -44,9 +44,9 @@ let fibonacci_ast =
     Assignment("b", Int 1);
     While(Gt(Var "n", Int 1),
     [
-      Assignment("b", Add(Var "a", Var "b"));
-      Assignment("a", Sub(Var "b", Var "a"));
-      Assignment("n", Sub(Var "n", Int 1));
+      Assignment("b", BinOp(Add, Var "a", Var "b"));
+      Assignment("a", BinOp(Sub, Var "b", Var "a"));
+      Assignment("n", BinOp(Sub, Var "n", Int 1));
     ]
     )
   ]

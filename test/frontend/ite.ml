@@ -24,7 +24,7 @@ let on_ite_passes_2 () =
 
 let on_ite_passes_3 () =
   let expected_result =
-    [While(Neq(Var "a", Int 0), [Ite(Lt(Var "a", Int 0), [Assignment("a", Add(Var "a", Int 1))], [Assignment("a", Sub(Var "a", Int 1))])])] in
+    [While(Neq(Var "a", Int 0), [Ite(Lt(Var "a", Int 0), [Assignment("a", BinOp(Add, Var "a", Int 1))], [Assignment("a", BinOp(Sub, Var "a", Int 1))])])] in
   let actual_result = tokenize correct_input_ite_3 |> parse_to_program in
   check bool ("parse_to_program on: " ^ correct_input_ite_3) (actual_result = expected_result) true
 

@@ -24,7 +24,7 @@ let parse_to_program_passes_2 () =
 
 let parse_to_program_passes_3 () =
   let expected_result =
-    [Assignment("a", Add(Add(Call("f", [Var "a"; Int 1]), Call("f", [Int 1])), Var "f"))] in 
+    [Assignment("a", BinOp(Add, BinOp(Add, Call("f", [Var "a"; Int 1]), Call("f", [Int 1])), Var "f"))] in 
   let actual_result = tokenize correct_input_3 |> parse_to_program in
   check bool ("parse_to_program on: " ^ correct_input_3) (expected_result = actual_result) true
 

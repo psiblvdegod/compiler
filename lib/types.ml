@@ -1,7 +1,5 @@
 exception Invalid_statement
-
 exception Invalid_expression
-
 
 type expression =
   | Int of int

@@ -123,3 +123,26 @@ let%expect_test "bubble sort" =
     |}];
 
 ;;
+
+let exprs_as_print_args =
+"
+var a b c;
+
+a := 1;
+b := 2;
+c := 3;
+
+print (a + b) c ((a * c)) (((a))) ((b * c) / a);
+"
+
+let%expect_test "xor" =
+  run exprs_as_print_args;
+  [%expect {|
+    3
+    3
+    3
+    1
+    6
+  |}];
+
+;;

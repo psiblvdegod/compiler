@@ -1,7 +1,7 @@
 open Types
 open Printf
 
-exception ReDeclaration_attempt
+exception ID_is_already_occupied
 exception Unbound_value
 exception Not_supported
 
@@ -161,7 +161,7 @@ and process_declaration state = function
   | [] -> state
   | name :: rest ->
   if List.mem name state.vars then
-      raise ReDeclaration_attempt
+      raise ID_is_already_occupied
   else
       let state = { vars = name :: state.vars; acc = state.acc; } in
       let state = dec_sp state in

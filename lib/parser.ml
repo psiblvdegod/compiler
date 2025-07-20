@@ -82,14 +82,8 @@ let parse_boolean_expression tokens = parse_boolean_expression [] tokens
 
 (* parse_to_program and auxiliary functions *)
 
-let rec close_paren left balance = function
-| [] -> raise Invalid_expression
-| LP :: right -> close_paren (LP :: left) (balance + 1) right
-| RP :: right -> if balance = 0 then List.rev left, right else close_paren (RP :: left) (balance - 1) right
-| token :: right -> close_paren (token :: left) balance right
-
-(* TODO: replace this cringe with returning the rest from parse_expression *)
-let close_paren tokens = close_paren [] 0 tokens 
+(* unlike parse_expression returns rest and does not raises when rest != [] *)
+let parse_expr_with_rest = low_pr_expr_outer
 
 let rec parse_to_program acc = function
     | [] -> List.rev acc, []
@@ -153,8 +147,8 @@ and parse_call_stmt name acc = function
     | INT x -> parse_call_stmt name (Int x :: acc) rest
     | ID x -> parse_call_stmt name (Var x :: acc) rest
     | LP ->
-        let expr_tokens, rest = close_paren rest in
-        parse_call_stmt name ((parse_expression expr_tokens) :: acc) rest
+        let expr, rest = parse_expr_with_rest (LP :: rest) in
+        parse_call_stmt name (expr :: acc) rest
     | _ -> raise Invalid_statement
 
 let parse_to_program tokens =

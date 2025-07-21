@@ -3,6 +3,8 @@ open Types
 
 val parse_to_program : token list -> program
 
-val parse_boolean_expression : token list -> boolean_expression
+val parse_bool_expr : token list -> bool_expr
 
-val parse_expression : token list -> expression
+val parse_int_expr : token list -> int_expr
+
+val parse_str_expr : token list -> str_expr

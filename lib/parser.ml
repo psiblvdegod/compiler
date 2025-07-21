@@ -8,9 +8,9 @@ let rec split_by_token token left = function
 
 let split_by_token token token_list = split_by_token token [] token_list
 
-(* parse_expression and auxiliary functions *)
+(* parse_int_expr and auxiliary functions *)
 
-let rec parse_expression tokens =
+let rec parse_int_expr tokens =
     match low_pr_expr_outer tokens with
     | result, [] -> result
     | _ -> raise Invalid_expression
@@ -60,7 +60,7 @@ and parse_call name args rest =
         | [] -> Var name, rest
         | args2 -> Call(name, List.rev args2), rest
 
-(* parse_boolean_expression and auxiliary functions *)
+(* parse_bool_expr and auxiliary functions *)
 
 let comparison_of_token_opt = function
     | EQ  -> Some Eq
@@ -71,18 +71,18 @@ let comparison_of_token_opt = function
     | GEQ -> Some Geq
     | _ -> None
 
-let rec parse_boolean_expression left = function
+let rec parse_bool_expr left = function
   | [] -> raise Invalid_expression
   | token :: right ->
     match comparison_of_token_opt token with
-    | Some cmp -> Comparison(cmp, left |> List.rev |> parse_expression, parse_expression right)
-    | None -> parse_boolean_expression (token :: left) (right)
+    | Some cmp -> Comparison(cmp, left |> List.rev |> parse_int_expr, parse_int_expr right)
+    | None -> parse_bool_expr (token :: left) (right)
 
-let parse_boolean_expression tokens = parse_boolean_expression [] tokens
+let parse_bool_expr tokens = parse_bool_expr [] tokens
 
 (* parse_to_program and auxiliary functions *)
 
-(* unlike parse_expression returns rest and does not raises when rest != [] *)
+(* unlike parse_int_expr returns rest and does not raises when rest != [] *)
 let parse_expr_with_rest = low_pr_expr_outer
 
 let rec parse_to_program acc = function
@@ -113,13 +113,13 @@ let rec parse_to_program acc = function
 
 and parse_while tokens =
   let boolean_expression_tokens, statements_tokens = split_by_token DO tokens in
-  let boolean_expression = parse_boolean_expression boolean_expression_tokens in
+  let boolean_expression = parse_bool_expr boolean_expression_tokens in
   let statements, rest = parse_to_program [] statements_tokens in
     While(boolean_expression, statements), rest
 
 and parse_assignment name tokens = 
     let statement_tokens, rest = split_by_token SEMICOLON tokens in
-      Assignment(name, parse_expression statement_tokens), rest
+      Assignment(name, parse_int_expr statement_tokens), rest
 
 and parse_declaration acc = function
   | SEMICOLON :: rest -> Declaration (List.rev acc), rest
@@ -128,7 +128,7 @@ and parse_declaration acc = function
 
 and parse_ite tokens = 
     let tokens_of_boolean_expression, then_tokens = split_by_token THEN tokens in
-    let boolean_expression = parse_boolean_expression tokens_of_boolean_expression in
+    let boolean_expression = parse_bool_expr tokens_of_boolean_expression in
     let then_program, rest = parse_to_program [] then_tokens in
     match rest with
     | FI :: rest -> Ite(boolean_expression, then_program, []), rest

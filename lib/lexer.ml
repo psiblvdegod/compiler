@@ -1,6 +1,6 @@
 open Token
 
-let token_of_keyword = function
+let token_of_reserved = function
   | "while" -> Some WHILE 
   | "done"  -> Some DONE 
   | "var"   -> Some VAR
@@ -9,6 +9,8 @@ let token_of_keyword = function
   | "then"  -> Some THEN
   | "else"  -> Some ELSE
   | "fi"    -> Some FI
+  | "true"  -> Some TRUE
+  | "false" -> Some FALSE
   | _       -> None
 
 let token_of_two_chars = function
@@ -53,12 +55,12 @@ let rec token_of_int state index =
 let rec token_of_id state index =
   let new_state = addi_pos state (index - state.pos) in
   let str = String.sub state.str state.pos (index - state.pos) in
-  match token_of_keyword str with
+  match token_of_reserved str with
   | Some token ->
     (if index = state.len then new_state, token else
       match state.str.[index] with
       | 'a'..'z' -> token_of_id state (index + 1)
-      | ' ' | '(' | ')' | '\n' | '\t' | '\r' | ';' -> new_state, token
+      | ' ' | '\n' | '\t' | '\r' | '(' | ')' | ';' -> new_state, token
       | _ -> raise Invalid_token)
   | None -> 
     (if index = state.len then new_state, ID str else

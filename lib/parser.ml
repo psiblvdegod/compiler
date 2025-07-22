@@ -8,99 +8,92 @@ let rec split_by_token token left = function
 
 let split_by_token token token_list = split_by_token token [] token_list
 
-(* parse_int_expr and auxiliary functions *)
+let rec expr_prior_4_outer tokens =
+  let (left, tokens) = expr_prior_3_outer tokens in expr_prior_4_inner left tokens
 
-let rec parse_int_expr tokens =
-    match low_pr_expr_outer tokens with
-    | result, [] -> result
-    | _ -> raise Invalid_expression
+and expr_prior_4_inner left = function
+  | EQ :: rest ->
+      let (right, rest) = expr_prior_3_outer rest in
+          expr_prior_4_inner (BinOp(Eq, left, right)) rest
+  | NEQ :: rest ->
+      let (right, rest) = expr_prior_3_outer rest in
+          expr_prior_4_inner (BinOp(Neq, left, right)) rest
+  | LEQ :: rest ->
+      let (right, rest) = expr_prior_3_outer rest in
+          expr_prior_4_inner (BinOp(Leq, left, right)) rest
+  | GEQ :: rest ->
+      let (right, rest) = expr_prior_3_outer rest in
+          expr_prior_4_inner (BinOp(Geq, left, right)) rest
+  | LT :: rest ->
+      let (right, rest) = expr_prior_3_outer rest in
+          expr_prior_4_inner (BinOp(Lt, left, right)) rest
+  | GT :: rest ->
+      let (right, rest) = expr_prior_3_outer rest in
+          expr_prior_4_inner (BinOp(Gt, left, right)) rest
+  | other -> (left, other)
 
-and low_pr_expr_outer tokens =
-    let (left, rest) = high_pr_expr_outer tokens in low_pr_expr_inner left rest
+and expr_prior_3_outer tokens =
+  let (left, tokens) = expr_prior_2_outer tokens in expr_prior_3_inner left tokens
 
-and high_pr_expr_outer tokens = 
-    let (left, rest) = parse_term tokens in high_pr_expr_inner left rest
+and expr_prior_3_inner left = function
+  | PLUS :: rest ->
+      let (right, rest) = expr_prior_2_outer rest in
+          expr_prior_3_inner (BinOp(Add, left, right)) rest
+  | MINUS :: rest ->
+      let (right, rest) = expr_prior_2_outer rest in
+          expr_prior_3_inner (BinOp(Sub, left, right)) rest
+  
+  (* TODO? : CAT, AND, OR *)
+  | other -> (left, other)
 
-and low_pr_expr_inner left = function
-    | PLUS :: rest ->
-        let (right, rest) = high_pr_expr_outer rest in
-        low_pr_expr_inner (BinOp(Add, left, right)) rest
-    | MINUS :: rest ->
-        let (right, rest) = high_pr_expr_outer rest in
-        low_pr_expr_inner (BinOp(Sub, left, right)) rest
-    | other -> (left, other)
+and expr_prior_2_outer tokens =
+  let (left, tokens) = expr_prior_1 tokens in expr_prior_2_inner left tokens
 
-and high_pr_expr_inner left = function
-    | STAR :: rest ->
-        let (right, rest) = parse_term rest in
-        high_pr_expr_inner (BinOp(Mul, left, right)) rest
-    | SLASH :: rest ->
-        let (right, rest) = parse_term rest in
-        high_pr_expr_inner (BinOp(Div, left, right)) rest
-    | other -> (left, other)
+and expr_prior_2_inner left = function
+  | STAR :: rest ->
+      let (right, rest) = expr_prior_1 rest in
+          expr_prior_2_inner (BinOp(Mul, left, right)) rest
+  | SLASH :: rest ->
+      let (right, rest) = expr_prior_1 rest in
+          expr_prior_2_inner (BinOp(Div, left, right)) rest
+  | other -> (left, other)
 
-and parse_term = function
+and expr_prior_1 = function
     | [] -> raise Invalid_expression
+
     | INT n :: rest -> Int n, rest
-    | ID name :: rest -> parse_call name [] rest
+    | ID name :: rest -> Var (Id name), rest (* TODO : parse call *)
+    | TRUE :: rest -> Bool true, rest
+    | FALSE :: rest -> Bool false, rest
     | MINUS :: rest ->
-        let (expr, rest) = parse_term rest in Neg(expr), rest
+        let (expr, rest) = expr_prior_1 rest in UnOp(Neg, expr), rest
     | LP :: rest ->
-        let (expr, rest) = low_pr_expr_outer rest in
+        let (expr, rest) = expr_prior_4_outer rest in
         (match rest with
         | RP :: rest -> expr, rest
+        
         | _ -> raise Invalid_expression)
     | _ -> raise Invalid_expression
 
-and parse_call name args rest =
-    match rest with
-    | ID x :: rest -> parse_call name ((Var x) :: args) rest
-    | INT x :: rest -> parse_call name ((Int x) :: args) rest
-    | _ -> match args with
-        | [] -> Var name, rest
-        | args2 -> Call(name, List.rev args2), rest
+let parse_expr_with_rest tokens = expr_prior_4_outer tokens
 
-(* parse_bool_expr and auxiliary functions *)
-
-let comparison_of_token_opt = function
-    | EQ  -> Some Eq
-    | NEQ -> Some Neq
-    | LT  -> Some Lt
-    | GT  -> Some Gt
-    | LEQ -> Some Leq
-    | GEQ -> Some Geq
-    | _ -> None
-
-let rec parse_bool_expr left = function
-  | [] -> raise Invalid_expression
-  | token :: right ->
-    match comparison_of_token_opt token with
-    | Some cmp -> Comparison(cmp, left |> List.rev |> parse_int_expr, parse_int_expr right)
-    | None -> parse_bool_expr (token :: left) (right)
-
-let parse_bool_expr tokens = parse_bool_expr [] tokens
-
-(* parse_to_program and auxiliary functions *)
-
-(* unlike parse_int_expr returns rest and does not raises when rest != [] *)
-let parse_expr_with_rest = low_pr_expr_outer
+let parse_expr_raise_if_rest tokens =
+  match parse_expr_with_rest tokens with
+  | expr, [] -> expr
+  | _ -> raise Invalid_expression
 
 let rec parse_to_program acc = function
     | [] -> List.rev acc, []
+
     | VAR :: rest ->
         let declaration, rest = parse_declaration [] rest in
         parse_to_program (declaration :: acc) rest
     | WHILE :: rest ->
         let while_stmnt, rest = parse_while rest in
         parse_to_program (while_stmnt :: acc) rest
-    | ID name :: rest ->
-        (match rest with
-        | COLONEQQ :: rest -> 
-            let assignment, rest = parse_assignment name rest in
+    | ID name :: COLONEQQ :: rest ->
+        let assignment, rest = parse_assignment name rest in
             parse_to_program (assignment :: acc) rest
-        | _ ->
-            let call, rest = parse_call_stmt name [] rest in
-            parse_to_program (call :: acc) rest)
 
     | IF :: rest ->
         let ite, rest = parse_ite rest in
@@ -109,49 +102,39 @@ let rec parse_to_program acc = function
     | FI :: rest -> List.rev acc, FI :: rest
 
     | DONE :: rest -> List.rev acc, rest
+    
     | _ -> raise Invalid_statement
 
-and parse_while tokens =
-  let boolean_expression_tokens, statements_tokens = split_by_token DO tokens in
-  let boolean_expression = parse_bool_expr boolean_expression_tokens in
-  let statements, rest = parse_to_program [] statements_tokens in
-    While(boolean_expression, statements), rest
-
-and parse_assignment name tokens = 
-    let statement_tokens, rest = split_by_token SEMICOLON tokens in
-      Assignment(name, parse_int_expr statement_tokens), rest
-
 and parse_declaration acc = function
-  | SEMICOLON :: rest -> Declaration (List.rev acc), rest
-  | ID name :: rest -> parse_declaration (name :: acc) rest
-  | _ -> raise Invalid_statement
+    | [] -> raise Invalid_statement
+    | SEMICOLON :: rest -> Declaration(List.rev acc), rest
+    | ID name :: rest -> parse_declaration ((Id name) :: acc) rest
+    | _ -> raise Invalid_statement
+
+and parse_assignment name tokens =
+  let expr_tokens, rest = split_by_token SEMICOLON tokens in
+  let expr = parse_expr_raise_if_rest expr_tokens in Assignment(Id name, expr), rest
+
+and parse_while tokens =
+  let condition_tokens, rest = split_by_token DO tokens in
+  let cond = parse_expr_raise_if_rest condition_tokens in
+  let program, rest = parse_to_program [] rest in
+  While(cond, program), rest
 
 and parse_ite tokens = 
-    let tokens_of_boolean_expression, then_tokens = split_by_token THEN tokens in
-    let boolean_expression = parse_bool_expr tokens_of_boolean_expression in
+    let condition_tokens, then_tokens = split_by_token THEN tokens in
+    let condition = parse_expr_raise_if_rest condition_tokens in
     let then_program, rest = parse_to_program [] then_tokens in
     match rest with
-    | FI :: rest -> Ite(boolean_expression, then_program, []), rest
+    | FI :: rest -> Ite(condition, then_program, []), rest
     | ELSE :: rest ->
         (let else_program, rest = parse_to_program [] rest in
         match rest with
-        | FI :: rest -> Ite(boolean_expression, then_program, else_program), rest
+        | FI :: rest -> Ite(condition, then_program, else_program), rest
         | _ -> raise Invalid_statement)
     | _ -> raise Invalid_statement
 
-and parse_call_stmt name acc = function
-| [] -> raise Invalid_statement
-| token :: rest ->
-    match token with
-    | SEMICOLON -> Call(name, List.rev acc), rest
-    | INT x -> parse_call_stmt name (Int x :: acc) rest
-    | ID x -> parse_call_stmt name (Var x :: acc) rest
-    | LP ->
-        let expr, rest = parse_expr_with_rest (LP :: rest) in
-        parse_call_stmt name (expr :: acc) rest
-    | _ -> raise Invalid_statement
-
 let parse_to_program tokens =
-  match parse_to_program [] tokens with
-  | result, [] -> result
-  | _ -> raise Invalid_statement
+    match parse_to_program [] tokens with
+    | result, [] -> result
+    | _ -> raise Invalid_statement

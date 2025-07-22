@@ -8,74 +8,61 @@ let rec split_by_token token left = function
 
 let split_by_token token token_list = split_by_token token [] token_list
 
-let rec expr_prior_4_outer tokens =
-  let (left, tokens) = expr_prior_3_outer tokens in expr_prior_4_inner left tokens
+let match_binop_lvl_4 = function
+    | EQ  -> Some Eq
+    | NEQ -> Some Neq
+    | LEQ -> Some Leq
+    | GEQ -> Some Geq
+    | LT  -> Some Lt
+    | GT  -> Some Gt
+    | _   -> None
 
-and expr_prior_4_inner left = function
-  | EQ :: rest ->
-      let (right, rest) = expr_prior_3_outer rest in
-          expr_prior_4_inner (BinOp(Eq, left, right)) rest
-  | NEQ :: rest ->
-      let (right, rest) = expr_prior_3_outer rest in
-          expr_prior_4_inner (BinOp(Neq, left, right)) rest
-  | LEQ :: rest ->
-      let (right, rest) = expr_prior_3_outer rest in
-          expr_prior_4_inner (BinOp(Leq, left, right)) rest
-  | GEQ :: rest ->
-      let (right, rest) = expr_prior_3_outer rest in
-          expr_prior_4_inner (BinOp(Geq, left, right)) rest
-  | LT :: rest ->
-      let (right, rest) = expr_prior_3_outer rest in
-          expr_prior_4_inner (BinOp(Lt, left, right)) rest
-  | GT :: rest ->
-      let (right, rest) = expr_prior_3_outer rest in
-          expr_prior_4_inner (BinOp(Gt, left, right)) rest
-  | other -> (left, other)
+and match_binop_lvl_3 = function
+    | PLUS  -> Some Add
+    | MINUS -> Some Sub
+    | _     -> None
 
-and expr_prior_3_outer tokens =
-  let (left, tokens) = expr_prior_2_outer tokens in expr_prior_3_inner left tokens
+and match_binop_lvl_2 = function
+    | SLASH -> Some Div    
+    | STAR -> Some Mul
+    | _     -> None
 
-and expr_prior_3_inner left = function
-  | PLUS :: rest ->
-      let (right, rest) = expr_prior_2_outer rest in
-          expr_prior_3_inner (BinOp(Add, left, right)) rest
-  | MINUS :: rest ->
-      let (right, rest) = expr_prior_2_outer rest in
-          expr_prior_3_inner (BinOp(Sub, left, right)) rest
-  
-  (* TODO? : CAT, AND, OR *)
-  | other -> (left, other)
+(* TODO: fix? god object *)
+let rec make_binop_parsing_priority_level binop_matcher next_level_parser tokens =
+    let (left, tokens) = next_level_parser tokens in
+    let rec parse_binop left = function
+    | [] -> (left, [])
+    | token :: rest ->
+        match binop_matcher token with
+        | None -> (left, token :: rest)
+        | Some binop ->
+            let (right, rest) = next_level_parser rest in
+            parse_binop (BinOp(binop, left, right)) rest in
 
-and expr_prior_2_outer tokens =
-  let (left, tokens) = expr_prior_1 tokens in expr_prior_2_inner left tokens
+    parse_binop left tokens
 
-and expr_prior_2_inner left = function
-  | STAR :: rest ->
-      let (right, rest) = expr_prior_1 rest in
-          expr_prior_2_inner (BinOp(Mul, left, right)) rest
-  | SLASH :: rest ->
-      let (right, rest) = expr_prior_1 rest in
-          expr_prior_2_inner (BinOp(Div, left, right)) rest
-  | other -> (left, other)
+and parse_expr_lvl_4 tokens = make_binop_parsing_priority_level match_binop_lvl_4 parse_expr_lvl_3 tokens
 
-and expr_prior_1 = function
+and parse_expr_lvl_3 tokens = make_binop_parsing_priority_level match_binop_lvl_3 parse_expr_lvl_2 tokens
+
+and parse_expr_lvl_2 tokens = make_binop_parsing_priority_level match_binop_lvl_2 parse_expr_lvl_1 tokens
+
+and parse_expr_lvl_1 = function
     | [] -> raise Invalid_expression
 
     | INT n :: rest -> Int n, rest
-    | ID name :: rest -> Var (Id name), rest (* TODO : parse call *)
-    | TRUE :: rest -> Bool true, rest
+    | ID id :: rest -> Var (Id id), rest (* TODO : parse call *)
+    | TRUE  :: rest -> Bool true, rest
     | FALSE :: rest -> Bool false, rest
-    | MINUS :: rest ->
-        let (expr, rest) = expr_prior_1 rest in UnOp(Neg, expr), rest
-    | LP :: rest ->
-        let (expr, rest) = expr_prior_4_outer rest in
+    | MINUS :: rest -> let (expr, rest) = parse_expr_lvl_1 rest in UnOp(Neg, expr), rest
+    | LP    :: rest ->
+        let (expr, rest) = parse_expr_lvl_4 rest in
         (match rest with
         | RP :: rest -> expr, rest
-        
         | _ -> raise Invalid_expression)
     | _ -> raise Invalid_expression
 
-let parse_expr_with_rest tokens = expr_prior_4_outer tokens
+let parse_expr_with_rest tokens = parse_expr_lvl_4 tokens
 
 let parse_expr_raise_if_rest tokens =
   match parse_expr_with_rest tokens with

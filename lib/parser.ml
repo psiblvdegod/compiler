@@ -27,7 +27,6 @@ and match_binop_lvl_2 = function
     | STAR -> Some Mul
     | _     -> None
 
-(* TODO: fix? god object *)
 let rec make_binop_parsing_priority_level binop_matcher next_level_parser tokens =
     let (left, tokens) = next_level_parser tokens in
     let rec parse_binop left = function
@@ -45,22 +44,28 @@ and parse_expr_lvl_4 tokens = make_binop_parsing_priority_level match_binop_lvl_
 
 and parse_expr_lvl_3 tokens = make_binop_parsing_priority_level match_binop_lvl_3 parse_expr_lvl_2 tokens
 
-and parse_expr_lvl_2 tokens = make_binop_parsing_priority_level match_binop_lvl_2 parse_expr_lvl_1 tokens
+and parse_expr_lvl_2 tokens = make_binop_parsing_priority_level match_binop_lvl_2 (parse_expr_lvl_1 []) tokens
 
-and parse_expr_lvl_1 = function
-    | [] -> raise Invalid_expression
-
-    | INT n :: rest -> Int n, rest
-    | ID id :: rest -> Var (Id id), rest (* TODO : parse call *)
-    | TRUE  :: rest -> Bool true, rest
-    | FALSE :: rest -> Bool false, rest
-    | MINUS :: rest -> let (expr, rest) = parse_expr_lvl_1 rest in UnOp(Neg, expr), rest
+and parse_expr_lvl_1 acc = function
+    | INT n :: rest -> parse_expr_lvl_1 ((Int n) :: acc) rest 
+    | ID id :: rest -> parse_expr_lvl_1 ((Var (Id id)) :: acc) rest 
+    | TRUE  :: rest -> parse_expr_lvl_1 ((Bool true) :: acc) rest
+    | FALSE :: rest -> parse_expr_lvl_1 ((Bool false) :: acc) rest
+    
     | LP    :: rest ->
         let (expr, rest) = parse_expr_lvl_4 rest in
         (match rest with
-        | RP :: rest -> expr, rest
+        | RP :: rest -> parse_expr_lvl_1 (expr :: acc) rest
         | _ -> raise Invalid_expression)
-    | _ -> raise Invalid_expression
+
+    | MINUS :: rest when acc = [] ->
+        let (expr, rest) = parse_expr_lvl_1 acc rest in parse_expr_lvl_1 (UnOp(Neg, expr) :: acc) rest
+
+    | rest ->
+        match List.rev acc with
+        | [expr] -> expr, rest
+        | Var(Id name) :: args -> Call(Id name, args), rest
+        | _ -> raise Invalid_expression
 
 let parse_expr_with_rest tokens = parse_expr_lvl_4 tokens
 
@@ -120,6 +125,13 @@ and parse_ite tokens =
         | FI :: rest -> Ite(condition, then_program, else_program), rest
         | _ -> raise Invalid_statement)
     | _ -> raise Invalid_statement
+
+and get_args acc = function
+    | [] -> raise Invalid_statement
+    | SEMICOLON :: rest -> List.rev acc, rest
+    | other ->
+        let arg, rest = parse_expr_lvl_1 [] other in
+        get_args (arg :: acc) rest
 
 let parse_to_program tokens =
     match parse_to_program [] tokens with

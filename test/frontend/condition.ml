@@ -9,18 +9,18 @@ let incorrect_input_1 = "a == b == c"
 let incorrect_input_2 = "a <"
 
 let parse_boolean_expression_passes_1 () =
-  let expected_result = Comparison(Eq, Var "a", BinOp(Add, Var "b", Int 6)) in
-  let actual_result = tokenize correct_input_1 |> parse_boolean_expression in
+  let expected_result = BinOp(Eq, Var(Id "a"), BinOp(Add, Var(Id "b"), Int 6)) in
+  let actual_result = tokenize correct_input_1 |> parse_expr_raise_if_rest in
   check bool ("parse_boolean_expression on: " ^ correct_input_1) (actual_result = expected_result) true
 
 let parse_boolean_expression_passes_2 () =
-  let expected_result = Comparison(Geq, Var "qwe", BinOp(Div, Var "asd", Var "zxc")) in
-  let actual_result = tokenize correct_input_2 |> parse_boolean_expression in
+  let expected_result = BinOp(Geq, Var(Id "qwe"), BinOp(Div, Var(Id "asd"), Var(Id "zxc"))) in
+  let actual_result = tokenize correct_input_2 |> parse_expr_raise_if_rest in
   check bool ("parse_boolean_expression on: " ^ correct_input_2) (actual_result = expected_result) true
 
 let parse_boolean_expression_raises_1 () =
    try
-    ignore (tokenize incorrect_input_1 |> parse_boolean_expression)
+    ignore (tokenize incorrect_input_1 |> parse_expr_raise_if_rest)
   with
   | Invalid_expression -> ()
   | Failure msg -> failwith msg
@@ -28,7 +28,7 @@ let parse_boolean_expression_raises_1 () =
 
 let parse_boolean_expression_raises_2 () =
    try
-    ignore (tokenize incorrect_input_2 |> parse_boolean_expression)
+    ignore (tokenize incorrect_input_2 |> parse_expr_raise_if_rest)
   with
   | Invalid_expression -> ()
   | Failure msg -> failwith msg

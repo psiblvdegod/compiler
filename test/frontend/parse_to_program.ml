@@ -37,12 +37,12 @@ let incorrect_input_while_2 = "
   done"
 
 let on_assign_passes_1 () =
-  let expected_result = [Assignment("a", Var "b"); Assignment("c", Int 5);] in
+  let expected_result = [Assignment(Id "a", Var (Id "b")); Assignment(Id "c", Int 5);] in
   let actual_result = tokenize correct_input_assign_1 |> parse_to_program in
   check bool ("parse_to_program on: " ^ correct_input_assign_1) (actual_result = expected_result) true
 
 let on_assign_passes_2 () =
-  let expected_result = [Assignment("a", BinOp(Add, Int 1, BinOp(Mul, Var "b", Int 2)))] in
+  let expected_result = [Assignment(Id "a", BinOp(Add, Int 1, BinOp(Mul, Var (Id "b"), Int 2)))] in
   let actual_result = tokenize correct_input_assign_2 |> parse_to_program in
   check bool ("parse_to_program on: " ^ correct_input_assign_2) (actual_result = expected_result) true
 
@@ -73,23 +73,23 @@ let tests_on_assignment =
 
 let on_while_passes_1 () =
   let expected_result =
-    [While(Comparison(Leq, Int 1, Int 2),[Assignment("a", BinOp(Add, Var "b", Var "c"));];)] in
+    [While(BinOp(Leq, Int 1, Int 2),[Assignment(Id "a", BinOp(Add, Var (Id "b"), Var (Id "c")));];)] in
   let actual_result = tokenize correct_input_while_1 |> parse_to_program in
   check bool ("parse_to_program on:\n" ^ correct_input_while_1) (actual_result = expected_result) true
 
 let on_while_passes_2 () =
   let expected_result =
     [
-      While(Comparison(Eq, Int 0, Int 0),
+      While(BinOp(Eq, Int 0, Int 0),
       [
-        Assignment("a", Int 0);
-        While(Comparison(Eq, Int 0, Int 0),
+        Assignment(Id "a", Int 0);
+        While(BinOp(Eq, Int 0, Int 0),
           [
-            Assignment("a", Int 0)
+            Assignment(Id "a", Int 0)
           ]);
-        Assignment("a", Int 0);
+        Assignment(Id "a", Int 0);
       ]);
-      Assignment("a", Int 0);
+      Assignment(Id "a", Int 0);
     ]
   in
   let actual_result = tokenize correct_input_while_2 |> parse_to_program in

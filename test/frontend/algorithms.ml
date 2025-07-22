@@ -1,6 +1,6 @@
 open Alcotest
-open Compiler.Lexer
 open Compiler.Parser
+open Compiler.Lexer
 open Compiler.Types
 
 let factorial_code = "
@@ -25,28 +25,28 @@ done"
 
 let factorial_ast =
   [
-    Declaration(["n"; "acc"]);
-    Assignment("n", Int 5);
-    Assignment("acc", Int 1);
-    While(Comparison(Gt, Var "n", Int 1),
+    Declaration([Id "n"; Id "acc"]);
+    Assignment(Id "n", Int 5);
+    Assignment(Id "acc", Int 1);
+    While(BinOp(Gt, Var (Id "n"), Int 1),
     [
-      Assignment("acc", BinOp(Mul, Var "acc", Var "n"));
-      Assignment("n", BinOp(Sub, Var "n", Int 1));
+      Assignment(Id "acc", BinOp(Mul, Var(Id "acc"), Var(Id "n")));
+      Assignment(Id "n", BinOp(Sub, Var(Id "n"), Int 1));
     ]
     )
   ]
 
 let fibonacci_ast =
   [
-    Declaration(["a"; "b"; "n"]);
-    Assignment("n", Int 5);
-    Assignment("a", Int 0);
-    Assignment("b", Int 1);
-    While(Comparison(Gt, Var "n", Int 1),
+    Declaration([Id "a"; Id "b"; Id "n"]);
+    Assignment(Id "n", Int 5);
+    Assignment(Id "a", Int 0);
+    Assignment(Id "b", Int 1);
+    While(BinOp(Gt, Var(Id "n"), Int 1),
     [
-      Assignment("b", BinOp(Add, Var "a", Var "b"));
-      Assignment("a", BinOp(Sub, Var "b", Var "a"));
-      Assignment("n", BinOp(Sub, Var "n", Int 1));
+      Assignment(Id "b", BinOp(Add, Var(Id "a"), Var(Id "b")));
+      Assignment(Id "a", BinOp(Sub, Var(Id "b"), Var(Id "a")));
+      Assignment(Id "n", BinOp(Sub, Var(Id "n"), Int 1));
     ]
     )
   ]

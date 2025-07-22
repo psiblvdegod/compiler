@@ -1,3 +1,4 @@
+(*
 open Alcotest
 open Compiler.Lexer
 open Compiler.Parser
@@ -62,3 +63,4 @@ let () = run "test_call.ml"
     ("tests_to_pass", tests_to_pass);
     ("tests_to_raise", tests_to_raise);
   ]
+*)

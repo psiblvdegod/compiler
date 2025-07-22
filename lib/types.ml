@@ -12,6 +12,7 @@ type expression =
 
   | BinOp of binary_operation * expression * expression
   | UnOp of unary_operation * expression
+  | Call of call
 
 and unary_operation =
   | Neg
@@ -35,6 +36,8 @@ and binary_operation =
   | Lt
   | Gt
 
+and call = id * expression list
+
 and statement =
   | Declaration of id list
 
@@ -43,6 +46,6 @@ and statement =
   | Ite of expression * program * program
 
   | Definition of id * id list * program
-  | Call of id * expression list
+  | Call of call
 
 and program = statement list

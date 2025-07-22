@@ -9,10 +9,6 @@
 (test
  (name algorithms)
  (libraries alcotest compiler))
- 
-(test
- (name call)
- (libraries alcotest compiler))
 
 (test
  (name condition)
@@ -24,4 +20,8 @@
 
 (test
  (name ite)
+ (libraries alcotest compiler))
+
+(test
+ (name call)
  (libraries alcotest compiler))

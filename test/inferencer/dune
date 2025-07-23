@@ -1,0 +1,7 @@
+(library
+ (name inferencer)
+ (modules type_checker)
+ (preprocess
+  (pps ppx_expect))
+ (inline_tests)
+ (libraries base compiler))

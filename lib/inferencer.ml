@@ -1,165 +1,191 @@
 open Types
+open Printf
 
-type err =
+type error =
     | Already_declared
-    | Already_defined
-    | Was_not_declared
-    | Was_not_defined
-    | Type_discrepancy
-    | Var_has_no_value
-    | Unused_value
+    | Was_Not_declared
+    | Was_Not_defined
+    | Was_Not_assigned
+    | Operand_type_dismatch
+    | Function_type_dismatch
+    | Already_specified (* TODO : rename *)
 
-type expr_type =
-    | TInt
-    | TBool
-    | TStr
-    | TNull
+type expr_type = | TInt | TBool | TStr | TNull
 
-(* TODO: local scopes *)
-type state = {
-    vars : (string * expr_type) list;
-    funcs : (string * (expr_type list)) list;
+and state = 
+{
+    vars : (id * expr_type) list;
+    funcs: (id * expr_type * (expr_type list)) list;
 }
 
-let reg_var state var var_type = { vars = (var, var_type) :: state.vars; funcs = state.funcs}
+let rec find_var id = function
+    | [] -> Error Was_Not_declared
+    | head :: tail -> 
+        match head with
+        | (k, _) when k = id -> Ok (head)
+        | _ -> find_var id tail
 
-let reg_func state name args_types = { vars = state.vars; funcs = (name, args_types) :: state.funcs}
+let specify_var_type state var new_var_type =
+    match List.assq_opt var state.vars with
+    | None -> Error Was_Not_declared
+    | Some old_var_type ->
+        match old_var_type with
+        | TNull ->
+            let ls = List.remove_assq var state.vars in
+            let state' = { vars = (var, new_var_type) :: ls; funcs = state.funcs } in Ok (state')
+        | _     -> Error (Already_specified)
 
-let init_state = { vars = []; funcs = []; }
+(* TODO : get all errors with info of invalid arguments *)
+let rec unfold_res acc = function
+    | [] -> Ok (List.rev acc)
+    | head :: rest ->
+        match head with
+        | Error err -> Error err
+        | Ok value  -> unfold_res (value :: acc) rest
 
-let inf_var state var expected_type = 
-    match List.assoc_opt var state.vars with
-    | None -> Error Was_not_declared
-    | Some t ->
-        match t with
-        | x when x = expected_type -> Ok expected_type
-        | TNull -> Error Var_has_no_value
-        | _     -> Error Type_discrepancy
+let unfold_res = unfold_res []
 
-let rec inf_int_expr state = function
-    | Int _ -> Ok TInt
-    | Var var -> inf_var state var TInt
-    | BinOp (_, left, right) ->
-        (
-        match inf_int_expr state left with
-        | Error er -> Error er
-        | Ok _ -> inf_int_expr state right
-        )
-    | Neg expr -> inf_int_expr state expr
+(* TODO: show which exactly variable was declared *)
+let infer_declaration state vars =
+    if List.exists (fun var -> List.mem_assq var state.vars) vars
+    then Error Already_declared
+    else
+        let init_types ls = List.map (fun var -> var, TNull) ls in
+        Ok ({ vars = state.vars @ (init_types vars); funcs = state.funcs })
 
-let rec inf_str_expr state = function
-    | Str _ -> Ok TStr
-    | Var var -> inf_var state var TStr
-    | StrOp (op) ->
-        (
-        match op with
-        | Rev expr -> inf_str_expr state expr
-        | _ -> failwith "not implemented"
-        )
+let type_of_binop = function
+    | Eq
+    | Neq
+    | Leq
+    | Geq
+    | Lt
+    | Gt
+    | And    (* TODO : change type to bool (somehow distinguish return type and operands type)*)
 
-let rec inf_bool_expr state = function
-    | True | False -> Ok TBool
-    | Var var -> inf_var state var TBool
-    | IntCmp (_, left, right) ->
-        (
-        match inf_int_expr state left with
-        | Error er -> Error er
-        | _ -> inf_int_expr state right
-        )
-    | StrCmp (left, right) ->
-        (
-        match inf_str_expr state left with
-        | Error er -> Error er
-        | _ -> inf_str_expr state right
-        )
+    | Mul
+    | Div
+    | Add
+    | Sub -> TInt
+    
+    | Or -> TBool
 
-let inf_expr state = function
-    | Int_Expr expr  -> inf_int_expr state expr
-    | Str_Expr expr  -> inf_str_expr state expr
-    | Bool_Expr expr -> inf_bool_expr state expr
+    | Cat -> TStr
 
-let rec inf_program state = function
+let type_of_unop = function
+    | Neg -> TInt
+    | Not -> TBool
+    | Rev -> TStr
+
+(* Error if type is TNull*)
+let rec infer_expression state = function
+    | Int _  -> Ok TInt
+    | Bool _ -> Ok TBool
+    | Str _  -> Ok TStr
+
+    | BinOp (binop, left, right) ->
+        let binop_type = type_of_binop binop in
+        let left_type_res = infer_expression state left in
+        let right_type_res = infer_expression state right in
+        (match left_type_res with
+        | Error err -> Error err
+        | Ok left_type ->
+        match right_type_res with
+        | Error err -> Error err
+        | Ok right_type ->
+        if left_type != binop_type then Error Operand_type_dismatch (* TODO: add comment to specify operand *)
+        else if right_type != binop_type then Error Operand_type_dismatch
+        else Ok binop_type)
+
+    | UnOp (unop, arg) ->
+        let unop_type = type_of_unop unop in
+        let arg_type_res = infer_expression state arg in
+        (match arg_type_res with
+        | Error err -> Error err
+        | Ok arg_type ->
+            if arg_type != unop_type
+            then Error Operand_type_dismatch
+            else Ok unop_type)
+
+    | Var id ->
+        (match find_var id state.vars with
+        | Error err -> Error err
+        | Ok (_, var_type) -> Ok(var_type))
+    
+    | Call(name, args) ->
+        (* TODO : more detailed error handling *)
+        let rec find_by_first name = function
+        | [] -> None
+        | (x, func_type, args_types) :: _ when x = name -> Some (func_type, args_types)
+        | _ :: rest -> find_by_first name rest in
+            
+        match find_by_first name state.funcs with
+        | None -> Error Was_Not_defined
+        | Some (func_type, expected_args_types) ->
+            let actual_args_types_res = List.map (fun arg -> infer_expression state arg) args in
+            match unfold_res actual_args_types_res with
+            | Error err -> Error err
+            | Ok (actual_args_types) -> 
+                if actual_args_types = expected_args_types (* TODO: somehow process TNull *)
+                then Ok (func_type)
+                else Error (Function_type_dismatch)
+
+let infer_assignment state id expr =    
+    match find_var id state.vars with
+    | Error err -> Error err
+    | Ok(var, var_type) ->
+        let type_of_expr_res = infer_expression state expr in
+            match type_of_expr_res with
+            | Error err -> Error err
+            | Ok type_of_expr ->
+                match var_type with
+                | TNull -> specify_var_type state var type_of_expr
+                | x when x = type_of_expr -> Ok(state)
+                | _ -> Error Already_specified
+
+let init_state =
+    { vars = []; funcs = []; }
+
+let rec type_check_program state = function
     | [] -> Ok (state)
     | statement :: rest ->
-        (
-            let check = function
-            | Declaration vars -> inf_declaration state vars
-            | Assignment (var, expr) -> inf_assignment state var expr
-            | While (condition, program) -> inf_while state condition program
-            | Call (name, args) -> inf_call state name args 
-            | Ite (condition, then_program, else_program) -> inf_ite state condition then_program else_program
-            | Definition (name, args, program) -> inf_definition state name args program
+    (
+        let check = function
+        | Declaration vars -> infer_declaration state vars
+        | Assignment (var, expr) -> infer_assignment state var expr
+        | _ -> failwith "Not implemented"
 
-            in match check statement with
-            | Error err -> Error err
-            | Ok state -> inf_program state rest
-        )
-
-and inf_assignment state var expr =
-    match inf_expr state expr with
-    | Error err -> Error err
-    | Ok var_type -> Ok(reg_var state var var_type)
-
-and inf_while state condition program =
-    match inf_bool_expr state condition with
-    | Error err -> Error err
-    | Ok _ -> inf_program state program
-
-and inf_ite state condition then_program else_program =
-    match inf_bool_expr state condition with
-    | Error err -> Error err
-    | _ ->
-        match inf_program state then_program with
+        in match check statement with
         | Error err -> Error err
-        | _ -> inf_program state else_program
+        | Ok state -> type_check_program state rest
+    )
 
-and inf_declaration state names =
-    let rec loop state = function
-    | [] -> Ok (state)
-    | var :: rest ->
-        if List.mem_assoc var state.vars
-        then Error Already_declared
-        else loop (reg_var state var TNull) rest in
-    
-    loop state names
+let str_of_expr_type = function
+    | TInt  -> "Integer"
+    | TStr  -> "String"
+    | TBool -> "Boolean"
+    | TNull -> "Not specified"
 
-(* TODO: process shadowing somehow *)
-(* TODO: nested functions ? *)
-(* TODO: closure by using state as init_state ?? *)
-and inf_definition state name args program =
-    
-    if List.mem_assoc name state.funcs
-    then Error Already_defined
-    else
+let str_of_error = function
+    | Already_declared       -> "Already_declared"
+    | Was_Not_declared       -> "Was_Not_declared"
+    | Was_Not_defined        -> "Was_Not_defined"
+    | Was_Not_assigned       -> "Was_Not_assigned"
+    | Operand_type_dismatch  -> "Operand_type_dismatch"
+    | Function_type_dismatch -> "Function_type_dismatch"
+    | Already_specified      -> "Already_specified"
 
-    match inf_declaration init_state args with
-    | Error err -> Error err
-    | Ok local_state -> 
-    match inf_program local_state program with
-    | Error err -> Error err
-    | Ok local_state -> 
-        let rec loop acc = function
-        | [] -> Ok (List.rev acc)
-        | arg :: rest ->
-            match List.assoc arg local_state.vars with
-            | TNull -> Error Unused_value
-            | arg_type -> loop (arg_type :: acc) rest in
-        match loop [] args with
-        | Error err -> Error err
-        | Ok args_types -> Ok (reg_func state name args_types)
+let record var_name var_type = sprintf "Name: %s | Type: %s" var_name (str_of_expr_type var_type)
 
-and inf_call state func args =
-    match List.assoc_opt func state.funcs with
-    | None -> Error Was_not_defined
-    | Some expected_args_types ->
-        let rec loop acc = function
-        | [] -> Ok (List.rev acc)
-        | arg :: rest ->
-            match inf_expr state arg with
-            | Error err -> Error err
-            | Ok arg_type -> loop (arg_type :: acc) rest in                
-        
-        match loop [] args with
-        | Error err -> Error err
-        | Ok actual_args_types -> 
-        if actual_args_types = expected_args_types then Ok state else Error Type_discrepancy
+let rec print_vars acc = function
+    | [] -> printf "%s" (String.concat "\n" acc)
+    | (Id var_name, var_type) :: rest ->
+        print_vars (record var_name var_type :: acc) rest
+
+let print_vars vars = print_vars [] vars
+
+let pp_types_of_program program =
+    match type_check_program init_state program with
+    | Error error -> printf "%s\n" (str_of_error error)
+    | Ok(state) -> print_vars state.vars;
+
+;;

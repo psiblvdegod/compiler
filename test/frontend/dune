@@ -25,3 +25,7 @@
 (test
  (name call)
  (libraries alcotest compiler))
+
+(test
+ (name strings)
+ (libraries alcotest compiler))

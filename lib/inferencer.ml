@@ -82,29 +82,9 @@ let rec infer_expression state = function
     | Bool _ -> Ok TBool
     | Str _  -> Ok TStr
 
-    | BinOp (binop, left, right) ->
-        let binop_type = type_of_binop binop in
-        let left_type_res = infer_expression state left in
-        let right_type_res = infer_expression state right in
-        (match left_type_res with
-        | Error err -> Error err
-        | Ok left_type ->
-        match right_type_res with
-        | Error err -> Error err
-        | Ok right_type ->
-        if left_type != binop_type then Error Operand_type_dismatch (* TODO: add comment to specify operand *)
-        else if right_type != binop_type then Error Operand_type_dismatch
-        else Ok binop_type)
+    | BinOp (binop, left, right) -> match_binop_type state binop left right
 
-    | UnOp (unop, arg) ->
-        let unop_type = type_of_unop unop in
-        let arg_type_res = infer_expression state arg in
-        (match arg_type_res with
-        | Error err -> Error err
-        | Ok arg_type ->
-            if arg_type != unop_type
-            then Error Operand_type_dismatch
-            else Ok unop_type)
+    | UnOp (unop, arg) -> match_unop_type state unop arg
 
     | Var id ->
         (match find_var id state.vars with
@@ -128,6 +108,37 @@ let rec infer_expression state = function
                 if actual_args_types = expected_args_types (* TODO: somehow process TNull *)
                 then Ok (func_type)
                 else Error (Function_type_dismatch)
+
+and match_binop_type state binop left right =
+    let match_operands_with_same_type expected_operands_type return_type =
+        (match infer_expression state left with
+        | Error err -> Error err
+        | Ok (left_type) ->
+            match infer_expression state right with
+            | Error err -> Error err
+            | Ok (right_type) ->
+                if left_type = expected_operands_type && right_type = expected_operands_type
+                then Ok return_type
+                else Error Operand_type_dismatch) in
+
+    match binop with
+    | Eq | Neq | Leq | Geq | Lt | Gt -> match_operands_with_same_type TInt TBool
+    | Add | Sub | Div | Mul -> match_operands_with_same_type TInt TInt
+    | And | Or -> match_operands_with_same_type TBool TBool
+    | Cat -> match_operands_with_same_type TStr TStr
+
+and match_unop_type state unop operand =
+    let match_operand expected_operand_type return_type =
+        (match infer_expression state operand with
+        | Error err -> Error err
+        | Ok (operand_type) ->
+            if operand_type = expected_operand_type
+            then Ok return_type
+            else Error Operand_type_dismatch) in
+    match unop with
+    | Neg -> match_operand TInt TInt
+    | Rev -> match_operand TStr TStr
+    | Not -> match_operand TBool TBool
 
 let infer_assignment state id expr =    
     match find_var id state.vars with

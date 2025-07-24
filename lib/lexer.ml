@@ -41,6 +41,8 @@ type lexer_state = {
 
 let addi_pos state n = { str = state.str; len = state.len; pos = state.pos + n }
 
+let set_pos state pos = { str = state.str; len = state.len; pos = pos }
+
 let init_state input = { str = input; len = String.length input; pos = 0 }
 
 let rec token_of_int state index =
@@ -53,7 +55,7 @@ let rec token_of_int state index =
   | _ -> new_state, token
 
 let rec token_of_id state index =
-  let new_state = addi_pos state (index - state.pos) in
+  let new_state = set_pos state index in
   let str = String.sub state.str state.pos (index - state.pos) in
   match token_of_reserved str with
   | Some token ->
@@ -88,6 +90,16 @@ let try_tokenize_more state =
   | 'a'..'z' -> Some (token_of_id state state.pos)
   | _ -> None
 
+let try_tokenize_string_literal state =
+  if state.len - state.pos < 2 then None else
+  if state.str.[state.pos] <> '\"' then None else
+  match String.index_from_opt state.str (state.pos + 1) '\"' with
+  | None -> raise Invalid_token
+  | Some index ->
+    let token = STR (String.sub state.str (state.pos + 1) (index - state.pos - 1)) in
+    let state = set_pos state (index + 1) in 
+    Some(state, token)
+
 let is_unsignificant state =
   match state.str.[state.pos] with
   | ' ' | '\n' | '\t' | '\r' -> true
@@ -96,6 +108,9 @@ let is_unsignificant state =
 let rec tokenize_loop state acc =
   if state.pos = state.len then acc else
   if is_unsignificant state then tokenize_loop (addi_pos state 1) acc else
+  match try_tokenize_string_literal state with
+  | Some (state, token) -> tokenize_loop state (token :: acc)
+  | None ->
   match try_tokenize_two_chars state with
   | Some (state, token) -> tokenize_loop state (token :: acc)
   | None ->

@@ -5,6 +5,7 @@ type token =
 | INT of int
 | TRUE
 | FALSE
+| STR of string
 | WHILE
 | DO
 | DONE

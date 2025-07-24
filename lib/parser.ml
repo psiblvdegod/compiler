@@ -47,7 +47,8 @@ and parse_expr_lvl_3 tokens = make_binop_parsing_priority_level match_binop_lvl_
 and parse_expr_lvl_2 tokens = make_binop_parsing_priority_level match_binop_lvl_2 (parse_expr_lvl_1 []) tokens
 
 and parse_expr_lvl_1 acc = function
-    | INT n :: rest -> parse_expr_lvl_1 ((Int n) :: acc) rest 
+    | INT n :: rest -> parse_expr_lvl_1 ((Int n) :: acc) rest
+    | STR s :: rest -> parse_expr_lvl_1 ((Str s) :: acc) rest
     | ID id :: rest -> parse_expr_lvl_1 ((Var (Id id)) :: acc) rest 
     | TRUE  :: rest -> parse_expr_lvl_1 ((Bool true) :: acc) rest
     | FALSE :: rest -> parse_expr_lvl_1 ((Bool false) :: acc) rest

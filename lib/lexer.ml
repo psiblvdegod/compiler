@@ -48,28 +48,28 @@ let init_state input = { str = input; len = String.length input; pos = 0 }
 let rec token_of_int state index =
   let new_state = addi_pos state (index - state.pos) in
   let token = lazy (INT(String.sub state.str state.pos (index - state.pos) |> int_of_string)) in
-  if index = state.len then new_state, token
+  if index = state.len then Ok (new_state, token)
   else match state.str.[index] with
   | '0'..'9' -> token_of_int state (index + 1)
-  | 'a'..'z' -> raise Invalid_token
-  | _ -> new_state, token
+  | 'a'..'z' -> Error Invalid_token
+  | _ -> Ok (new_state, token)
 
 let rec token_of_id state index =
   let new_state = set_pos state index in
   let str = String.sub state.str state.pos (index - state.pos) in
   match token_of_reserved str with
   | Some token ->
-    (if index = state.len then new_state, token else
+    (if index = state.len then Ok (new_state, token) else
       match state.str.[index] with
       | 'a'..'z' -> token_of_id state (index + 1)
-      | ' ' | '\n' | '\t' | '\r' | '(' | ')' | ';' -> new_state, token
-      | _ -> raise Invalid_token)
+      | ' ' | '\n' | '\t' | '\r' | '(' | ')' | ';' -> Ok (new_state, token)
+      | _ -> Error Invalid_token)
   | None -> 
-    (if index = state.len then new_state, ID str else
+    (if index = state.len then Ok (new_state, ID str) else
       match state.str.[index] with
       | 'a'..'z' -> token_of_id state (index + 1)
-      | '0'..'9' -> raise Invalid_token
-      | _ -> new_state, ID str)
+      | '0'..'9' -> Error Invalid_token
+      | _ -> Ok (new_state, ID str))
 
 let try_tokenize_char state =
   if state.pos = state.len then None else
@@ -86,7 +86,10 @@ let try_tokenize_two_chars state =
 let try_tokenize_more state =
   if state.pos = state.len then None else
   match state.str.[state.pos] with
-  | '0'..'9' -> let state, token = token_of_int state state.pos in Some (state, token |> Lazy.force)
+  | '0'..'9' ->
+      (match token_of_int state state.pos with
+      | Error err -> Some (Error err)
+      | Ok (state, token) -> Some (Ok (state, token |> Lazy.force)))
   | 'a'..'z' -> Some (token_of_id state state.pos)
   | _ -> None
 
@@ -94,11 +97,10 @@ let try_tokenize_string_literal state =
   if state.len - state.pos < 2 then None else
   if state.str.[state.pos] <> '\"' then None else
   match String.index_from_opt state.str (state.pos + 1) '\"' with
-  | None -> raise Invalid_token
+  | None -> Some (Error Invalid_token)
   | Some index ->
     let token = STR (String.sub state.str (state.pos + 1) (index - state.pos - 1)) in
-    let state = set_pos state (index + 1) in 
-    Some(state, token)
+    let state = set_pos state (index + 1) in Some(Ok (state, token))
 
 let is_unsignificant state =
   match state.str.[state.pos] with
@@ -106,10 +108,11 @@ let is_unsignificant state =
   | _ -> false
 
 let rec tokenize_loop state acc =
-  if state.pos = state.len then acc else
+  if state.pos = state.len then Ok(acc) else
   if is_unsignificant state then tokenize_loop (addi_pos state 1) acc else
   match try_tokenize_string_literal state with
-  | Some (state, token) -> tokenize_loop state (token :: acc)
+  | Some (Error err) -> Error err
+  | Some (Ok (state, token)) -> tokenize_loop state (token :: acc)
   | None ->
   match try_tokenize_two_chars state with
   | Some (state, token) -> tokenize_loop state (token :: acc)
@@ -118,7 +121,12 @@ let rec tokenize_loop state acc =
   | Some (state, token) -> tokenize_loop state (token :: acc)
   | None ->
   match try_tokenize_more state with
-  | Some (state, token) -> tokenize_loop state (token :: acc)
-  | None -> raise Invalid_token
+  | Some (Error err) -> Error err
+  | Some (Ok (state, token)) -> tokenize_loop state (token :: acc)
+  | None -> Error Invalid_token
 
-let tokenize str = tokenize_loop (init_state str) [] |> List.rev
+let tokenize str =
+  if String.trim str = String.empty then Error Input_is_empty else
+  match tokenize_loop (init_state str) [] with
+  | Error err -> Error err
+  | Ok (tokens) -> Ok (List.rev tokens)

@@ -31,8 +31,8 @@ let type_check str =
   | Ok(tokens) ->
     match tokens |> parse_to_program with
     | Error err -> print_endline ("Error: " ^ (Types.show_error err))
-    | Ok(program, []) -> program |> pp_types_of_program
-    | _ -> print_endline ("Error: " ^ (Types.show_error Invalid_statement))
+    | Ok(program) -> program |> pp_types_of_program
+  
 
 
 let%expect_test "test1" =

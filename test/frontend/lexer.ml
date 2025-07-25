@@ -1,71 +1,100 @@
-open Alcotest
-open Compiler.Lexer
 open Compiler.Token
+open Compiler.Lexer
 
 let correct_input_1 = "while do done var"
-
 let correct_input_2 = "== != <= >= := () + - * /;"
-
 let correct_input_3 = "var a := while * do;"
-
 let correct_input_4 = "if a > 1 then a := b; else a := c; fi;"
-
 let incorrect_input_1 = "_]?"
-
 let incorrect_input_2 = String.empty
+let incorrect_input_3 = "\"fdf"
 
-let tokenize_passes_1 () =
-  let expected_result = [WHILE; DO; DONE; VAR] in
-  let actual_result = tokenize correct_input_1 in
-  check bool ("tokenize on: " ^ correct_input_1) (expected_result = actual_result) true
+let pp_tokens text =
+  match tokenize text with
+  | Error err -> print_endline ("Error: " ^ show_error err)
+  | Ok(tokens) -> List.iter (fun s -> print_endline (show_token s)) tokens
 
-let tokenize_passes_2 () =
-  let expected_result = [EQ; NEQ; LEQ; GEQ; COLONEQQ; LP; RP; PLUS; MINUS; STAR; SLASH; SEMICOLON] in
-  let actual_result = tokenize correct_input_2 in
-  check bool ("tokenize on: " ^ correct_input_2) (expected_result = actual_result) true
+let%expect_test "test on correct input 1" =
+  pp_tokens correct_input_1;
+  [%expect {|
+    WHILE
+    DO
+    DONE
+    VAR
+    |}];
 
-let tokenize_passes_3 () =
-  let expected_result = [VAR; ID "a"; COLONEQQ; WHILE; STAR; DO; SEMICOLON] in
-  let actual_result = tokenize correct_input_3 in
-  check bool ("tokenize on: " ^ correct_input_3) (expected_result = actual_result) true
+;;
 
-let tokenize_passes_4 () =
-  let expected_result = [IF; ID "a"; GT; INT 1; THEN; ID "a"; COLONEQQ; ID "b"; SEMICOLON; ELSE; ID "a"; COLONEQQ; ID "c"; SEMICOLON; FI; SEMICOLON] in
-  let actual_result = tokenize correct_input_4 in
-  check bool ("tokenize on: " ^ correct_input_4) (expected_result = actual_result) true
+let%expect_test "test on correct input 2" =
+  pp_tokens correct_input_2;
+  [%expect {|
+    EQ
+    NEQ
+    LEQ
+    GEQ
+    COLONEQQ
+    LP
+    RP
+    PLUS
+    MINUS
+    STAR
+    SLASH
+    SEMICOLON
+    |}];
 
-let tokenize_raises_1 () =
-  try
-    ignore (tokenize incorrect_input_1)
-  with
-  | Invalid_token -> ()
-  | Failure msg -> failwith msg
-  | _ -> failwith ("expected exception did not occur\n" ^ "tokenize on: " ^ incorrect_input_1)
+;;
 
-let tokenize_raises_2 () =
-  try
-    ignore (tokenize incorrect_input_2)
-  with
-  | Invalid_token -> ()
-  | Failure msg -> failwith msg
-  | _ -> failwith ("expected exception did not occur\n" ^ "tokenize on: " ^ incorrect_input_2)
+let%expect_test "test on correct input 3" =
+  pp_tokens correct_input_3;
+  [%expect {|
+    VAR
+    (ID "a")
+    COLONEQQ
+    WHILE
+    STAR
+    DO
+    SEMICOLON
+    |}];
 
-let tests_to_pass =
-  [
-    ("tokenize passes on: " ^ correct_input_1, `Quick, tokenize_passes_1);
-    ("tokenize passes on: " ^ correct_input_2, `Quick, tokenize_passes_2);
-    ("tokenize passes on: " ^ correct_input_3, `Quick, tokenize_passes_3);
-    ("tokenize passes on: " ^ correct_input_4, `Quick, tokenize_passes_4);
-  ]
+;;
 
-let tests_to_raise =
-  [
-    ("tokenize raises on: " ^ incorrect_input_1, `Quick, tokenize_raises_1);
-    ("tokenize raises on: String.empty", `Quick, tokenize_raises_2);
-  ]
+let%expect_test "test on correct input 4" =
+  pp_tokens correct_input_4;
+  [%expect {|
+    IF
+    (ID "a")
+    GT
+    (INT 1)
+    THEN
+    (ID "a")
+    COLONEQQ
+    (ID "b")
+    SEMICOLON
+    ELSE
+    (ID "a")
+    COLONEQQ
+    (ID "c")
+    SEMICOLON
+    FI
+    SEMICOLON
+    |}];
 
-let () = run "test_lexer.ml"
-  [
-    ("tests_to_pass", tests_to_pass);
-    ("tests_to_raise", tests_to_raise);
-  ]
+;;
+
+let%expect_test "test on incorrect input 1" =
+  pp_tokens incorrect_input_1;
+  [%expect {| Error: Invalid_token |}];
+
+;;
+
+let%expect_test "test on incorrect input 2" =
+  pp_tokens incorrect_input_2;
+  [%expect {| Error: Input_is_empty |}];
+
+;;
+
+let%expect_test "test on incorrect input 3" =
+  pp_tokens incorrect_input_3;
+  [%expect {| Error: Invalid_token |}];
+
+;;

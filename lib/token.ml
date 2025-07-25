@@ -1,4 +1,7 @@
-exception Invalid_token
+type error =
+| Invalid_token
+| Input_is_empty
+[@@deriving show { with_path = false }]
 
 type token =
 | ID of string
@@ -28,3 +31,4 @@ type token =
 | LP
 | RP
 | SEMICOLON
+[@@deriving show { with_path = false }]

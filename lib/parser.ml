@@ -146,12 +146,14 @@ and parse_ite tokens =
             | _ -> Error Invalid_statement))
     | _ -> Error Invalid_expression
 
-and get_args acc = function
-    | [] -> Error Invalid_statement
-    | SEMICOLON :: rest -> Ok(List.rev acc, rest)
-    | other ->
-        match parse_expr_lvl_1 [] other with
-        | Error err -> Error err
-        | Ok (arg, rest) -> get_args (arg :: acc) rest
+let parse_expression tokens =
+    match parse_expression tokens with
+    | Error err -> Error err
+    | Ok(expression, []) -> Ok(expression)
+    | _ -> Error Invalid_expression
 
-let parse_to_program tokens = parse_to_program [] tokens
+let parse_to_program tokens =
+    match parse_to_program [] tokens with
+    | Error err -> Error err
+    | Ok(program, []) -> Ok(program)
+    | _ -> Error Invalid_statement

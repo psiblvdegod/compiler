@@ -28,17 +28,20 @@ and match_binop_lvl_2 = function
     | _     -> None
 
 let rec make_binop_parsing_priority_level binop_matcher next_level_parser tokens =
-    let (left, tokens) = next_level_parser tokens in
-    let rec parse_binop left = function
-    | [] -> (left, [])
-    | token :: rest ->
-        match binop_matcher token with
-        | None -> (left, token :: rest)
-        | Some binop ->
-            let (right, rest) = next_level_parser rest in
-            parse_binop (BinOp(binop, left, right)) rest in
+    match next_level_parser tokens with
+    | Error err -> Error err
+    | Ok(left, tokens) -> 
+        let rec parse_binop left = function
+        | [] -> Ok(left, [])
+        | token :: rest ->
+            match binop_matcher token with
+            | None -> Ok(left, token :: rest)
+            | Some binop ->
+                match next_level_parser rest with
+                | Error err -> Error err
+                | Ok(right, rest) -> parse_binop (BinOp(binop, left, right)) rest in
 
-    parse_binop left tokens
+        parse_binop left tokens
 
 and parse_expr_lvl_4 tokens = make_binop_parsing_priority_level match_binop_lvl_4 parse_expr_lvl_3 tokens
 
@@ -54,87 +57,101 @@ and parse_expr_lvl_1 acc = function
     | FALSE :: rest -> parse_expr_lvl_1 ((Bool false) :: acc) rest
     
     | LP    :: rest ->
-        let (expr, rest) = parse_expr_lvl_4 rest in
-        (match rest with
-        | RP :: rest -> parse_expr_lvl_1 (expr :: acc) rest
-        | _ -> raise Invalid_expression)
+        (match parse_expr_lvl_4 rest with
+        | Error err -> Error err
+        | Ok(expr, rest) ->
+            (match rest with
+            | RP :: rest -> parse_expr_lvl_1 (expr :: acc) rest
+            | _ -> Error Invalid_expression))
 
     | MINUS :: rest when acc = [] ->
-        let (expr, rest) = parse_expr_lvl_1 acc rest in parse_expr_lvl_1 (UnOp(Neg, expr) :: acc) rest
+        (match parse_expr_lvl_1 acc rest with
+        | Error err -> Error err
+        | Ok(expr, rest) ->  parse_expr_lvl_1 (UnOp(Neg, expr) :: acc) rest)
 
     | rest ->
         match List.rev acc with
-        | [expr] -> expr, rest
-        | Var(Id name) :: args -> Call(Id name, args), rest
-        | _ -> raise Invalid_expression
+        | [expr] -> Ok(expr, rest)
+        | Var(Id name) :: args -> Ok(Call(Id name, args), rest)
+        | _ -> Error Invalid_expression
 
-let parse_expr_with_rest tokens = parse_expr_lvl_4 tokens
-
-let parse_expr_raise_if_rest tokens =
-  match parse_expr_with_rest tokens with
-  | expr, [] -> expr
-  | _ -> raise Invalid_expression
+let parse_expression tokens = parse_expr_lvl_4 tokens
 
 let rec parse_to_program acc = function
-    | [] -> List.rev acc, []
+    | [] -> Ok(List.rev acc, [])
 
     | VAR :: rest ->
-        let declaration, rest = parse_declaration [] rest in
-        parse_to_program (declaration :: acc) rest
+        (match parse_declaration [] rest with
+        | Error err -> Error err
+        | Ok (declaration, rest) -> parse_to_program (declaration :: acc) rest)
+        
     | WHILE :: rest ->
-        let while_stmnt, rest = parse_while rest in
-        parse_to_program (while_stmnt :: acc) rest
+        (match parse_while rest with
+        | Error err -> Error err
+        | Ok (while_stmnt, rest) -> parse_to_program (while_stmnt :: acc) rest)
+        
     | ID name :: COLONEQQ :: rest ->
-        let assignment, rest = parse_assignment name rest in
-            parse_to_program (assignment :: acc) rest
-
+        (match parse_assignment name rest with
+        | Error err -> Error err
+        | Ok (assignment, rest) -> parse_to_program (assignment :: acc) rest)
+            
     | IF :: rest ->
-        let ite, rest = parse_ite rest in
-        parse_to_program (ite :: acc) rest
-    | ELSE :: rest -> List.rev acc, ELSE :: rest
-    | FI :: rest -> List.rev acc, FI :: rest
+        (match parse_ite rest with
+        | Error err -> Error err
+        | Ok (statement, rest) -> parse_to_program (statement :: acc) rest)
 
-    | DONE :: rest -> List.rev acc, rest
+
+    | ELSE :: rest -> Ok(List.rev acc, ELSE :: rest)
+    | FI :: rest -> Ok(List.rev acc, FI :: rest)
+    | DONE :: rest -> Ok (List.rev acc, rest)
     
-    | _ -> raise Invalid_statement
+    | _ -> Error Invalid_statement
 
 and parse_declaration acc = function
-    | [] -> raise Invalid_statement
-    | SEMICOLON :: rest -> Declaration(List.rev acc), rest
+    | SEMICOLON :: rest -> Ok (Declaration(List.rev acc), rest)
     | ID name :: rest -> parse_declaration ((Id name) :: acc) rest
-    | _ -> raise Invalid_statement
+    | _ -> Error Invalid_statement
 
 and parse_assignment name tokens =
-  let expr_tokens, rest = split_by_token SEMICOLON tokens in
-  let expr = parse_expr_raise_if_rest expr_tokens in Assignment(Id name, expr), rest
+  let expression_tokens, rest = split_by_token SEMICOLON tokens in
+  match parse_expression expression_tokens with
+  | Ok(expr, []) -> Ok(Assignment(Id name, expr), rest)
+  | _ -> Error Invalid_expression
 
 and parse_while tokens =
   let condition_tokens, rest = split_by_token DO tokens in
-  let cond = parse_expr_raise_if_rest condition_tokens in
-  let program, rest = parse_to_program [] rest in
-  While(cond, program), rest
-
+  match parse_expression condition_tokens with
+  | Ok (condition, []) ->
+    (match parse_to_program [] rest with
+    | Ok (program, rest) -> Ok (While(condition, program), rest)
+    | Error err -> Error err)
+  | _ -> Error Invalid_expression
+  
 and parse_ite tokens = 
     let condition_tokens, then_tokens = split_by_token THEN tokens in
-    let condition = parse_expr_raise_if_rest condition_tokens in
-    let then_program, rest = parse_to_program [] then_tokens in
-    match rest with
-    | FI :: rest -> Ite(condition, then_program, []), rest
-    | ELSE :: rest ->
-        (let else_program, rest = parse_to_program [] rest in
-        match rest with
-        | FI :: rest -> Ite(condition, then_program, else_program), rest
-        | _ -> raise Invalid_statement)
-    | _ -> raise Invalid_statement
+    match parse_expression condition_tokens with
+    | Ok (condition, []) -> 
+        (match parse_to_program [] then_tokens with
+        | Error err -> Error err
+        | Ok(then_program, rest) ->
+            (match rest with
+            | FI :: rest -> Ok(Ite(condition, then_program, []), rest)
+            | ELSE :: rest ->
+                (match parse_to_program [] rest with
+                | Error err -> Error err
+                | Ok(else_program, rest) ->
+                    (match rest with
+                    | FI :: rest -> Ok(Ite(condition, then_program, else_program), rest)
+                    | _ -> Error Invalid_statement))
+            | _ -> Error Invalid_statement))
+    | _ -> Error Invalid_expression
 
 and get_args acc = function
-    | [] -> raise Invalid_statement
-    | SEMICOLON :: rest -> List.rev acc, rest
+    | [] -> Error Invalid_statement
+    | SEMICOLON :: rest -> Ok(List.rev acc, rest)
     | other ->
-        let arg, rest = parse_expr_lvl_1 [] other in
-        get_args (arg :: acc) rest
+        match parse_expr_lvl_1 [] other with
+        | Error err -> Error err
+        | Ok (arg, rest) -> get_args (arg :: acc) rest
 
-let parse_to_program tokens =
-    match parse_to_program [] tokens with
-    | result, [] -> result
-    | _ -> raise Invalid_statement
+let parse_to_program tokens = parse_to_program [] tokens

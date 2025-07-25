@@ -1,7 +1,7 @@
-exception Invalid_statement
-exception Invalid_expression
-
-type id = Id of string
+type error =
+  | Invalid_expression
+  | Invalid_statement
+[@@deriving show { with_path = false }]
 
 type expression =
   | Var of id
@@ -13,11 +13,16 @@ type expression =
   | BinOp of binary_operation * expression * expression
   | UnOp of unary_operation * expression
   | Call of call
+[@@deriving show { with_path = false }]
+
+and id = Id of string
+[@@deriving show { with_path = false }]
 
 and unary_operation =
   | Neg
   | Rev
   | Not
+[@@deriving show { with_path = false }]
 
 and binary_operation =
   | Mul
@@ -35,8 +40,10 @@ and binary_operation =
   | Geq
   | Lt
   | Gt
+[@@deriving show { with_path = false }]
 
 and call = id * expression list
+[@@deriving show { with_path = false }]
 
 and statement =
   | Declaration of id list
@@ -47,5 +54,7 @@ and statement =
 
   | Definition of id * id list * program
   | Call of call
+[@@deriving show { with_path = false }]
 
 and program = statement list
+[@@deriving show { with_path = false }]

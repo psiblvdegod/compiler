@@ -1,3 +1,3 @@
 open Token
 
-val tokenize : string -> token list
+val tokenize : string -> (token list, error) result

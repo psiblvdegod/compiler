@@ -1,5 +1,5 @@
 (library
  (name compiler)
- (modules token lexer parser types inferencer)
+ (modules types lexer parser inferencer)
  (preprocess
   (pps ppx_deriving.show)))

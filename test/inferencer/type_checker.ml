@@ -48,10 +48,10 @@ let%expect_test "test2" =
   [%expect {|
     [((Typed_Declaration [(Id "a"); (Id "b"); (Id "c")]),
       { vars = []; funcs = [] });
-      ((Typed_Assignment ((Id "a"), (Str "zxc"), TStr)),
+      ((Typed_Assignment ((Id "a"), ((Str "zxc"), TStr))),
        { vars = [((Id "a"), TNull); ((Id "b"), TNull); ((Id "c"), TNull)];
          funcs = [] });
-      ((Typed_Assignment ((Id "b"), (Var (Id "a")), TStr)),
+      ((Typed_Assignment ((Id "b"), ((Var (Id "a")), TStr))),
        { vars = [((Id "a"), TStr); ((Id "b"), TNull); ((Id "c"), TNull)];
          funcs = [] })
       ]
@@ -81,30 +81,30 @@ let%expect_test "test3" =
   [%expect {|
     [((Typed_Declaration [(Id "a"); (Id "b"); (Id "c"); (Id "d"); (Id "e")]),
       { vars = []; funcs = [] });
-      ((Typed_Assignment ((Id "a"), (Str "zxc"), TStr)),
+      ((Typed_Assignment ((Id "a"), ((Str "zxc"), TStr))),
        { vars =
          [((Id "a"), TNull); ((Id "b"), TNull); ((Id "c"), TNull);
            ((Id "d"), TNull); ((Id "e"), TNull)];
          funcs = [] });
-      ((Typed_Assignment ((Id "b"), (BinOp (Cat, (Var (Id "a")), (Str "123"))),
-          TStr)),
+      ((Typed_Assignment ((Id "b"),
+          ((BinOp (Cat, (Var (Id "a")), (Str "123"))), TStr))),
        { vars =
          [((Id "a"), TStr); ((Id "b"), TNull); ((Id "c"), TNull);
            ((Id "d"), TNull); ((Id "e"), TNull)];
          funcs = [] });
-      ((Typed_Assignment ((Id "c"), (BinOp (Cat, (Str "1"), (Var (Id "b")))),
-          TStr)),
+      ((Typed_Assignment ((Id "c"),
+          ((BinOp (Cat, (Str "1"), (Var (Id "b")))), TStr))),
        { vars =
          [((Id "b"), TStr); ((Id "a"), TStr); ((Id "c"), TNull);
            ((Id "d"), TNull); ((Id "e"), TNull)];
          funcs = [] });
-      ((Typed_Assignment ((Id "d"), (Bool true), TBool)),
+      ((Typed_Assignment ((Id "d"), ((Bool true), TBool))),
        { vars =
          [((Id "c"), TStr); ((Id "b"), TStr); ((Id "a"), TStr);
            ((Id "d"), TNull); ((Id "e"), TNull)];
          funcs = [] });
-      ((Typed_Assignment ((Id "e"), (BinOp (Or, (Var (Id "d")), (Bool false))),
-          TBool)),
+      ((Typed_Assignment ((Id "e"),
+          ((BinOp (Or, (Var (Id "d")), (Bool false))), TBool))),
        { vars =
          [((Id "d"), TBool); ((Id "c"), TStr); ((Id "b"), TStr);
            ((Id "a"), TStr); ((Id "e"), TNull)];
@@ -136,12 +136,12 @@ let%expect_test "while_test" =
   type_check while_test;
   [%expect {|
     [((Typed_Declaration [(Id "a")]), { vars = []; funcs = [] });
-      ((Typed_Assignment ((Id "a"), (Bool true), TBool)),
+      ((Typed_Assignment ((Id "a"), ((Bool true), TBool))),
        { vars = [((Id "a"), TNull)]; funcs = [] });
-      ((Typed_While ((Var (Id "a")),
+      ((Typed_While (((Var (Id "a")), TBool),
           [((Typed_Declaration [(Id "b")]),
             { vars = [((Id "a"), TBool)]; funcs = [] });
-            ((Typed_Assignment ((Id "b"), (Int 1), TInt)),
+            ((Typed_Assignment ((Id "b"), ((Int 1), TInt))),
              { vars = [((Id "a"), TBool); ((Id "b"), TNull)]; funcs = [] });
             ((Typed_Declaration [(Id "d")]),
              { vars = [((Id "b"), TInt); ((Id "a"), TBool)]; funcs = [] })

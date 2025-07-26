@@ -20,6 +20,9 @@ let match_binop_lvl_4 = function
 and match_binop_lvl_3 = function
     | PLUS  -> Some Add
     | MINUS -> Some Sub
+    | CAT   -> Some Cat
+    | AND   -> Some And
+    | OR    -> Some Or
     | _     -> None
 
 and match_binop_lvl_2 = function

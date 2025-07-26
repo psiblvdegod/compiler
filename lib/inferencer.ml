@@ -114,7 +114,7 @@ and infer_assignment scope name expr =
         if var_type = TNull || var_type = expr_type then
             let vars =  (name, expr_type) :: (List.remove_assoc name scope.vars) in
             let new_scope = {vars = vars; funcs = scope.funcs} in
-            Ok(new_scope, (Typed_Assignment(name, expr, expr_type), scope))
+            Ok(new_scope, (Typed_Assignment(name, (expr, expr_type)), scope))
         else Error Expression_type_dismatch
 
 and infer_while scope condition program =
@@ -123,7 +123,7 @@ and infer_while scope condition program =
     | Ok expr_type when expr_type = TBool ->
         (match specify_program_types scope program [] with
         | Error err -> Error err
-        | Ok typed_program -> Ok (scope, (Typed_While(condition, typed_program), scope)))
+        | Ok typed_program -> Ok (scope, (Typed_While((condition, TBool), typed_program), scope)))
     | _ -> Error Expression_type_dismatch
-        
+
 let infer_types program = specify_program_types init_scope program []

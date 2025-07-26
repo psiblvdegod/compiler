@@ -120,15 +120,17 @@ and scope =
 }
 [@@deriving show { with_path = false }]
 
+and typed_expression = expression * expression_type
+
 and typed_statement =
   | Typed_Declaration of id list
 
-  | Typed_Assignment of id * expression * expression_type
-  | Typed_While of expression * typed_program
-  | Typed_Ite of expression * typed_program * typed_program
+  | Typed_Assignment of id * typed_expression
+  | Typed_While of typed_expression * typed_program
+  | Typed_Ite of typed_expression * typed_program * typed_program
 
   | Typed_Definition of id * id list * typed_program
-  | Typed_Call of id * expression list
+  | Typed_Call of id * typed_expression list
 [@@deriving show { with_path = false }]
 
 and typed_program = (typed_statement * scope) list

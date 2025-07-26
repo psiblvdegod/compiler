@@ -17,18 +17,6 @@ let specify_var_type state var new_var_type =
             let state' = { vars = (var, new_var_type) :: ls; funcs = state.funcs } in Ok (state')
         | _     -> Error (Already_specified)
 
-(* TODO
-let rec unfold_res acc = function
-    | [] -> Ok (List.rev acc)
-    | head :: rest ->
-        match head with
-        | Error err -> Error err
-        | Ok value  -> unfold_res (value :: acc) rest
-
-let unfold_res = unfold_res []
-
-*)
-
 (* TODO: show which exactly variable was declared *)
 let infer_declaration state vars =
     if List.exists (fun var -> List.mem_assq var state.vars) vars
@@ -74,26 +62,6 @@ let rec infer_expression state = function
         (match find_var id state.vars with
         | Error err -> Error err
         | Ok (_, var_type) -> Ok(var_type))
-
-(* TODO
-    | Call(name, args) ->
-        (* TODO : more detailed error handling *)
-        let rec find_by_first name = function
-        | [] -> None
-        | (x, func_type, args_types) :: _ when x = name -> Some (func_type, args_types)
-        | _ :: rest -> find_by_first name rest in
-            
-        match find_by_first name state.funcs with
-        | None -> Error Was_Not_defined
-        | Some (func_type, expected_args_types) ->
-            let actual_args_types_res = List.map (fun arg -> infer_expression state arg) args in
-            match unfold_res actual_args_types_res with
-            | Error err -> Error err
-            | Ok (actual_args_types) -> 
-                if actual_args_types = expected_args_types (* TODO: somehow process TNull *)
-                then Ok (func_type)
-                else Error (Function_type_dismatch)
-*)
 
 and match_binop_type state binop left right =
     let match_operands_with_same_type expected_operands_type return_type =

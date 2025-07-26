@@ -1,11 +1,13 @@
 open Compiler
+open Compiler.Types
+open Compiler.Token
 
 let pp_ast text =
   match Lexer.tokenize text with
-  | Error err -> print_endline ("Error: " ^ Token.show_error err)
+  | Error err -> print_endline ("Error: " ^ show_lexer_error err)
   | Ok(tokens) ->
   match Parser.parse_expression tokens with
-  | Error err -> print_endline ("Error: " ^ Types.show_error err)
+  | Error err -> print_endline ("Error: " ^ show_parser_error err)
   | Ok(expression) -> print_endline (Types.show_expression expression)
 
 let _parse_expression_correct_1 = "1 + 2 * 3"
@@ -51,10 +53,10 @@ let%expect_test "parse_expression_correct_4" =
 
 let pp_program text = 
   match Lexer.tokenize text with
-  | Error err -> print_endline ("Error: " ^ Token.show_error err)
+  | Error err -> print_endline ("Error: " ^ show_lexer_error err)
   | Ok(tokens) ->
   match Parser.parse_to_program tokens with
-  | Error err -> print_endline ("Error: " ^ Types.show_error err)
+  | Error err -> print_endline ("Error: " ^ show_parser_error err)
   | Ok(program) -> print_endline(Types.show_program program)
 
 let _assignment_correct_1 = "a := b; c := 5;"

@@ -1,4 +1,6 @@
-type error =
+(* parser *)
+
+type parser_error =
   | Invalid_expression
   | Invalid_statement
 [@@deriving show { with_path = false }]

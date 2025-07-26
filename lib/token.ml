@@ -1,4 +1,4 @@
-type error =
+type lexer_error =
 | Invalid_token
 | Input_is_empty
 [@@deriving show { with_path = false }]

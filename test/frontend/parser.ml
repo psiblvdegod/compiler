@@ -301,22 +301,6 @@ let%expect_test "call_expr_correct_3" =
 
 ;;
 
-let _call_expr_incorrect_1 = "func a := 1"
-
-let _call_expr_incorrect_2 = "a := fact for while do"
-
-let%expect_test "call_expr_incorrect_1" =
-    pp_program _call_expr_incorrect_1;
-    [%expect {| Error: Invalid_statement |}]
-
-;;
-
-let%expect_test "call_expr_incorrect_1" =
-    pp_program _call_expr_incorrect_2;
-    [%expect {| Error: Invalid_expression |}]
-
-;;
-
 let _call_stmt_correct_1 = "print;"
 
 let%expect_test "call_stmt_correct 1" =

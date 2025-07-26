@@ -1,4 +1,3 @@
-open Token
 open Types
 
 let rec split_by_token token left = function

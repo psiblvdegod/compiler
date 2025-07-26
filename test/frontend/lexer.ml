@@ -1,4 +1,4 @@
-open Compiler.Token
+open Compiler.Types
 open Compiler.Lexer
 
 let pp_tokens text =

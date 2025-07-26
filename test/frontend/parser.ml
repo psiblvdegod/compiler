@@ -1,6 +1,5 @@
 open Compiler
 open Compiler.Types
-open Compiler.Token
 
 let pp_ast text =
   match Lexer.tokenize text with

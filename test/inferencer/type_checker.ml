@@ -1,18 +1,18 @@
-open Compiler
+open Compiler.Types
 open Compiler.Lexer
 open Compiler.Parser
 open Compiler.Inferencer
 
 let type_check str = 
   match str |> tokenize with
-  | Error err -> print_endline ("Error: " ^ (Token.show_lexer_error err))
+  | Error err -> print_endline ("Error: " ^ (show_lexer_error err))
   | Ok(tokens) ->
     match tokens |> parse_to_program with
-    | Error err -> print_endline ("Error: " ^ (Types.show_parser_error err))
+    | Error err -> print_endline ("Error: " ^ (show_parser_error err))
     | Ok(program) ->
       match program |> infer_types with
-      | Error err -> print_endline ("Error: " ^ (Types.show_inferencer_error err))
-      | Ok(inferencer_state) -> print_endline (Types.show_inferencer_state inferencer_state)
+      | Error err -> print_endline ("Error: " ^ (show_inferencer_error err))
+      | Ok(inferencer_state) -> print_endline (show_inferencer_state inferencer_state)
 
 let test1 =
 "

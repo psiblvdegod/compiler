@@ -1,4 +1,4 @@
-open Token
+open Types
 
 let token_of_reserved = function
   | "while" -> Some WHILE  

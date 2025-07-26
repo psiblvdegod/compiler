@@ -323,11 +323,11 @@ let _call_stmt_correct_3 = "print (a + b + c) (\"123\" / 0);"
 let%expect_test "call_stmt_correct 3" =
     pp_program _call_stmt_correct_3;
     [%expect {|
-      [(Call
-          ((Id "print"),
-           [(BinOp (Add, (BinOp (Add, (Var (Id "a")), (Var (Id "b")))),
-               (Var (Id "c"))));
-             (BinOp (Div, (Str "123"), (Int 0)))]))
+      [(Call ((Id "print"),
+          [(BinOp (Add, (BinOp (Add, (Var (Id "a")), (Var (Id "b")))),
+              (Var (Id "c"))));
+            (BinOp (Div, (Str "123"), (Int 0)))]
+          ))
         ]
       |}]
 

@@ -113,3 +113,43 @@ let%expect_test "test3" =
     |}];
 
 ;;
+
+
+let while_test =
+"
+var a;
+a := true;
+
+while a do
+  
+  var b;
+  b := 1;
+
+  var d;
+
+done
+
+var c;
+"
+
+let%expect_test "while_test" =
+  type_check while_test;
+  [%expect {|
+    [((Typed_Declaration [(Id "a")]), { vars = []; funcs = [] });
+      ((Typed_Assignment ((Id "a"), (Bool true), TBool)),
+       { vars = [((Id "a"), TNull)]; funcs = [] });
+      ((Typed_While ((Var (Id "a")),
+          [((Typed_Declaration [(Id "b")]),
+            { vars = [((Id "a"), TBool)]; funcs = [] });
+            ((Typed_Assignment ((Id "b"), (Int 1), TInt)),
+             { vars = [((Id "a"), TBool); ((Id "b"), TNull)]; funcs = [] });
+            ((Typed_Declaration [(Id "d")]),
+             { vars = [((Id "b"), TInt); ((Id "a"), TBool)]; funcs = [] })
+            ]
+          )),
+       { vars = [((Id "a"), TBool)]; funcs = [] });
+      ((Typed_Declaration [(Id "c")]), { vars = [((Id "a"), TBool)]; funcs = [] })
+      ]
+    |}];
+
+;;

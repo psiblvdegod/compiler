@@ -47,33 +47,27 @@ and parse_expr_lvl_4 tokens = make_binop_parsing_priority_level match_binop_lvl_
 
 and parse_expr_lvl_3 tokens = make_binop_parsing_priority_level match_binop_lvl_3 parse_expr_lvl_2 tokens
 
-and parse_expr_lvl_2 tokens = make_binop_parsing_priority_level match_binop_lvl_2 (parse_expr_lvl_1 []) tokens
+and parse_expr_lvl_2 tokens = make_binop_parsing_priority_level match_binop_lvl_2 parse_expr_lvl_1 tokens
 
-and parse_expr_lvl_1 acc = function
-    | INT n :: rest -> parse_expr_lvl_1 ((Int n) :: acc) rest
-    | STR s :: rest -> parse_expr_lvl_1 ((Str s) :: acc) rest
-    | ID id :: rest -> parse_expr_lvl_1 ((Var (Id id)) :: acc) rest 
-    | TRUE  :: rest -> parse_expr_lvl_1 ((Bool true) :: acc) rest
-    | FALSE :: rest -> parse_expr_lvl_1 ((Bool false) :: acc) rest
-    
+(* TODO: lambdas *)
+and parse_expr_lvl_1 = function
+    | INT n :: rest -> Ok(Int n, rest)
+    | STR s :: rest -> Ok(Str s, rest)
+    | ID id :: rest -> Ok(Var (Id id), rest)
+    | TRUE  :: rest -> Ok(Bool true, rest)
+    | FALSE :: rest -> Ok(Bool false, rest)
+    | MINUS :: rest ->
+        (match parse_expr_lvl_1 rest with
+        | Error err -> Error err
+        | Ok(expr, rest) -> Ok(UnOp(Neg, expr), rest))
     | LP    :: rest ->
         (match parse_expr_lvl_4 rest with
         | Error err -> Error err
         | Ok(expr, rest) ->
             (match rest with
-            | RP :: rest -> parse_expr_lvl_1 (expr :: acc) rest
+            | RP :: rest -> Ok(expr, rest)
             | _ -> Error Invalid_expression))
-
-    | MINUS :: rest when acc = [] ->
-        (match parse_expr_lvl_1 acc rest with
-        | Error err -> Error err
-        | Ok(expr, rest) ->  parse_expr_lvl_1 (UnOp(Neg, expr) :: acc) rest)
-
-    | rest ->
-        match List.rev acc with
-        | [expr] -> Ok(expr, rest)
-        | Var(Id name) :: args -> Ok(Call(Id name, args), rest)
-        | _ -> Error Invalid_expression
+    | _ -> Error Invalid_expression
 
 let parse_expression tokens = parse_expr_lvl_4 tokens
 
@@ -94,12 +88,16 @@ let rec parse_to_program acc = function
         (match parse_assignment name rest with
         | Error err -> Error err
         | Ok (assignment, rest) -> parse_to_program (assignment :: acc) rest)
+
+    | ID name :: rest ->
+        (match parse_call name rest [] with
+        | Error err -> Error err
+        | Ok(call, rest) -> parse_to_program (call :: acc) rest)
             
     | IF :: rest ->
         (match parse_ite rest with
         | Error err -> Error err
         | Ok (statement, rest) -> parse_to_program (statement :: acc) rest)
-
 
     | ELSE :: rest -> Ok(List.rev acc, ELSE :: rest)
     | FI :: rest -> Ok(List.rev acc, FI :: rest)
@@ -145,6 +143,15 @@ and parse_ite tokens =
                     | _ -> Error Invalid_statement))
             | _ -> Error Invalid_statement))
     | _ -> Error Invalid_expression
+
+and parse_call name tokens acc =
+    match tokens with
+    | [] -> Error Invalid_statement
+    | SEMICOLON :: rest -> Ok(Call(Id name, List.rev acc), rest)
+    | tokens ->
+        match parse_expr_lvl_1 tokens with
+        | Error _ -> Ok(Call(Id name, List.rev acc), tokens)
+        | Ok (expr, rest) -> parse_call name rest (expr :: acc)
 
 let parse_expression tokens =
     match parse_expression tokens with

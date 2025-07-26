@@ -83,9 +83,6 @@ and binary_operation =
   | Gt
 [@@deriving show { with_path = false }]
 
-and call = id * expression list
-[@@deriving show { with_path = false }]
-
 and statement =
   | Declaration of id list
 
@@ -94,7 +91,7 @@ and statement =
   | Ite of expression * program * program
 
   | Definition of id * id list * program
-  | Call of call
+  | Call of id * expression list
 [@@deriving show { with_path = false }]
 
 and program = statement list
@@ -108,6 +105,7 @@ type inferencer_error =
     | Was_Not_defined
     | Was_Not_assigned
     | Operand_type_dismatch
+    | Expression_type_dismatch
     | Function_type_dismatch
     | Already_specified
 [@@deriving show { with_path = false }]
@@ -122,7 +120,18 @@ and scope =
 }
 [@@deriving show { with_path = false }]
 
-and typed_program = (statement * scope) list
+and typed_statement =
+  | Typed_Declaration of id list
+
+  | Typed_Assignment of id * expression * expression_type
+  | Typed_While of expression * typed_program
+  | Typed_Ite of expression * typed_program * typed_program
+
+  | Typed_Definition of id * id list * typed_program
+  | Typed_Call of id * expression list
+[@@deriving show { with_path = false }]
+
+and typed_program = (typed_statement * scope) list
 [@@deriving show { with_path = false }]
 
 (* generator *)

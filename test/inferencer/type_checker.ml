@@ -57,3 +57,32 @@ let%expect_test "test2" =
     |}];
 
 ;;
+
+
+let test3 =
+"
+var a b c d e;
+
+a := \"zxc\";
+
+b := a ^ \"123\";
+
+c := \"1\" ^ b;
+
+d := true;
+
+e := d or false;
+
+"
+
+let%expect_test "test3" =
+  type_check test3;
+  [%expect {|
+    Name: a | Type: String
+    Name: b | Type: String
+    Name: c | Type: String
+    Name: d | Type: Boolean
+    Name: e | Type: Boolean
+    |}];
+
+;;

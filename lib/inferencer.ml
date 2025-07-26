@@ -1,11 +1,11 @@
 open Types
 
-let rec find_var id = function
+let rec find_var name = function
     | [] -> Error Was_Not_declared
     | head :: tail -> 
         match head with
-        | (k, _) when k = id -> Ok (head)
-        | _ -> find_var id tail
+        | (k, _) when k = name -> Ok (head)
+        | _ -> find_var name tail
 
 let specify_var_type state var new_var_type =
     match List.assq_opt var state.vars with
@@ -15,15 +15,7 @@ let specify_var_type state var new_var_type =
         | TNull ->
             let ls = List.remove_assq var state.vars in
             let state' = { vars = (var, new_var_type) :: ls; funcs = state.funcs } in Ok (state')
-        | _     -> Error (Already_specified)
-
-(* TODO: show which exactly variable was declared *)
-let infer_declaration state vars =
-    if List.exists (fun var -> List.mem_assq var state.vars) vars
-    then Error Already_declared
-    else
-        let init_types ls = List.map (fun var -> var, TNull) ls in
-        Ok ({ vars = state.vars @ (init_types vars); funcs = state.funcs })
+        | _     -> Error Already_specified
 
 let type_of_binop = function
     | Eq
@@ -32,14 +24,13 @@ let type_of_binop = function
     | Geq
     | Lt
     | Gt
-    | And    (* TODO : change type to bool (somehow distinguish return type and operands type)*)
-
+    | And
+    | Or -> TBool
+    
     | Mul
     | Div
     | Add
     | Sub -> TInt
-    
-    | Or -> TBool
 
     | Cat -> TStr
 
@@ -49,17 +40,17 @@ let type_of_unop = function
     | Rev -> TStr
 
 (* Error if type is TNull*)
-let rec infer_expression state = function
+let rec infer_expression scope = function
     | Int _  -> Ok TInt
     | Bool _ -> Ok TBool
     | Str _  -> Ok TStr
 
-    | BinOp (binop, left, right) -> match_binop_type state binop left right
+    | BinOp (binop, left, right) -> match_binop_type scope binop left right
 
-    | UnOp (unop, arg) -> match_unop_type state unop arg
+    | UnOp (unop, arg) -> match_unop_type scope unop arg
 
     | Var id ->
-        (match find_var id state.vars with
+        (match find_var id scope.vars with
         | Error err -> Error err
         | Ok (_, var_type) -> Ok(var_type))
 
@@ -93,35 +84,41 @@ and match_unop_type state unop operand =
     | Neg -> match_operand TInt TInt
     | Rev -> match_operand TStr TStr
     | Not -> match_operand TBool TBool
-
-let infer_assignment state id expr =    
-    match find_var id state.vars with
+    
+let infer_assignment scope id expr =    
+    match find_var id scope.vars with
     | Error err -> Error err
     | Ok(var, var_type) ->
-        let type_of_expr_res = infer_expression state expr in
-            match type_of_expr_res with
+            match infer_expression scope expr with
             | Error err -> Error err
             | Ok type_of_expr ->
                 match var_type with
-                | TNull -> specify_var_type state var type_of_expr
-                | x when x = type_of_expr -> Ok(state)
+                | TNull -> specify_var_type scope var type_of_expr
+                | x when x = type_of_expr -> Ok(scope)
                 | _ -> Error Already_specified
 
-let init_state =
-    { vars = []; funcs = []; }
+let init_scope = { vars = []; funcs = []; }
 
-let rec type_check_program state = function
-    | [] -> Ok (state)
+let rec specify_program_types scope program acc =
+    match program with
+    | [] -> Ok (List.rev acc)
     | statement :: rest ->
-    (
-        let check = function
-        | Declaration vars -> infer_declaration state vars
-        | Assignment (var, expr) -> infer_assignment state var expr
-        | _ -> failwith "Not implemented"
+        match statement with
+        | Declaration names ->
+            (match infer_declaration scope names with
+            | Error err -> Error err
+            | Ok new_scope -> specify_program_types new_scope rest ((Declaration names, scope) :: acc))
+        | Assignment (name, expr) ->
+            (match infer_assignment scope name expr with
+            | Error err -> Error err
+            | Ok new_scope -> specify_program_types new_scope rest ((Assignment(name, expr), scope) :: acc))
+        | _ -> failwith "not implemented"
 
-        in match check statement with
-        | Error err -> Error err
-        | Ok state -> type_check_program state rest
-    )
+and infer_declaration scope vars =
+    if List.exists (fun var -> List.mem_assq var scope.vars) vars
+    then Error Already_declared (* TODO: show which exactly variable was declared *)
+    else
+        let typed_vars = List.map (fun var -> var, TNull) vars in
+        Ok ({ vars = scope.vars @ typed_vars; funcs = scope.funcs })
 
-let infer_types program = type_check_program init_state program 
+let infer_types program = specify_program_types init_scope program []

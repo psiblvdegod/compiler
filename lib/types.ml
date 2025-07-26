@@ -68,7 +68,7 @@ and unary_operation =
 and binary_operation =
   | Mul
   | Div
-  
+
   | Add
   | Sub
   | Cat
@@ -115,9 +115,18 @@ type inferencer_error =
 type expression_type = | TInt | TBool | TStr | TNull
 [@@deriving show { with_path = false }]
 
-and inferencer_state = 
+and scope = 
 {
     vars : (id * expression_type) list;
     funcs: (id * expression_type * (expression_type list)) list;
 }
+[@@deriving show { with_path = false }]
+
+and typed_program = (statement * scope) list
+[@@deriving show { with_path = false }]
+
+(* generator *)
+
+type generator_error =
+| Not_implemented
 [@@deriving show { with_path = false }]

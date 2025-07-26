@@ -85,15 +85,19 @@ let rec specify_program_types scope program acc =
         | Declaration names ->
             (match infer_declaration scope names with
             | Error err -> Error err
-            | Ok (new_scope, declaration) -> specify_program_types new_scope rest (declaration :: acc))
+            | Ok (new_scope, typed_declaration) -> specify_program_types new_scope rest (typed_declaration :: acc))
         | Assignment (name, expr) ->
             (match infer_assignment scope name expr with
             | Error err -> Error err
-            | Ok (new_scope, assignment) -> specify_program_types new_scope rest (assignment :: acc))
+            | Ok (new_scope, typed_assignment) -> specify_program_types new_scope rest (typed_assignment :: acc))
         | While (condition, program) ->
             (match infer_while scope condition program with
             | Error err -> Error err
             | Ok (new_scope, typed_while) -> specify_program_types new_scope rest (typed_while :: acc))
+        | Ite (condition, then_program, else_program) ->
+            (match infer_ite scope condition then_program else_program with
+            | Error err -> Error err
+            | Ok (new_scope, typed_ite) -> specify_program_types new_scope rest (typed_ite :: acc))
         | _ -> failwith "not implemented"
 
 and infer_declaration scope vars =
@@ -124,6 +128,18 @@ and infer_while scope condition program =
         (match specify_program_types scope program [] with
         | Error err -> Error err
         | Ok typed_program -> Ok (scope, (Typed_While((condition, TBool), typed_program), scope)))
+    | _ -> Error Expression_type_dismatch
+
+and infer_ite scope condition then_program else_program =
+    match infer_expression scope condition with
+    | Error err -> Error err
+    | Ok expr_type when expr_type = TBool ->
+        (match specify_program_types scope then_program [] with
+        | Error err -> Error err
+        | Ok typed_then_program -> 
+        match specify_program_types scope else_program [] with
+        | Error err -> Error err
+        | Ok typed_else_program -> Ok (scope, (Typed_Ite((condition, TBool), typed_then_program, typed_else_program), scope)))
     | _ -> Error Expression_type_dismatch
 
 let infer_types program = specify_program_types init_scope program []

@@ -90,6 +90,10 @@ let rec specify_program_types scope program acc =
             (match infer_assignment scope name expr with
             | Error err -> Error err
             | Ok (new_scope, assignment) -> specify_program_types new_scope rest (assignment :: acc))
+        | While (condition, program) ->
+            (match infer_while scope condition program with
+            | Error err -> Error err
+            | Ok (new_scope, typed_while) -> specify_program_types new_scope rest (typed_while :: acc))
         | _ -> failwith "not implemented"
 
 and infer_declaration scope vars =
@@ -113,4 +117,13 @@ and infer_assignment scope name expr =
             Ok(new_scope, (Typed_Assignment(name, expr, expr_type), scope))
         else Error Expression_type_dismatch
 
+and infer_while scope condition program =
+    match infer_expression scope condition with
+    | Error err -> Error err
+    | Ok expr_type when expr_type = TBool ->
+        (match specify_program_types scope program [] with
+        | Error err -> Error err
+        | Ok typed_program -> Ok (scope, (Typed_While(condition, typed_program), scope)))
+    | _ -> Error Expression_type_dismatch
+        
 let infer_types program = specify_program_types init_scope program []

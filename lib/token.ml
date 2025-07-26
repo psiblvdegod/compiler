@@ -21,6 +21,9 @@ type token =
 | MINUS
 | STAR
 | SLASH
+| CAT
+| AND
+| OR
 | EQ
 | NEQ
 | COLONEQQ

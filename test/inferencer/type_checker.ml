@@ -3,6 +3,17 @@ open Compiler.Lexer
 open Compiler.Parser
 open Compiler.Inferencer
 
+let type_check str = 
+  match str |> tokenize with
+  | Error err -> print_endline ("Error: " ^ (Token.show_error err))
+  | Ok(tokens) ->
+    match tokens |> parse_to_program with
+    | Error err -> print_endline ("Error: " ^ (Types.show_error err))
+    | Ok(program) ->
+      match program |> infer_types with
+      | Error err -> print_endline ("Error: " ^ (Types.show_inferencer_error err))
+      | Ok(inferencer_state) -> print_endline (Types.show_inferencer_state inferencer_state)
+
 let test1 =
 "
 var a b c d e f;
@@ -15,6 +26,17 @@ e := b < a;
 f := e;
 "
 
+let%expect_test "test1" =
+  type_check test1;
+  [%expect {|
+    { vars =
+      [((Id "f"), TBool); ((Id "e"), TBool); ((Id "d"), TInt); ((Id "c"), TInt);
+        ((Id "b"), TInt); ((Id "a"), TInt)];
+      funcs = [] }
+    |}];
+
+;;
+
 let test2 =
 "
 var a b c;
@@ -25,35 +47,11 @@ b := a;
 
 "
 
-let type_check str = 
-  match str |> tokenize with
-  | Error err -> print_endline ("Error: " ^ (Token.show_error err))
-  | Ok(tokens) ->
-    match tokens |> parse_to_program with
-    | Error err -> print_endline ("Error: " ^ (Types.show_error err))
-    | Ok(program) -> program |> pp_types_of_program
-  
-
-
-let%expect_test "test1" =
-  type_check test1;
-  [%expect {|
-    Name: a | Type: Integer
-    Name: b | Type: Integer
-    Name: c | Type: Integer
-    Name: d | Type: Integer
-    Name: e | Type: Boolean
-    Name: f | Type: Boolean
-    |}];
-
-;;
-
 let%expect_test "test2" =
   type_check test2;
   [%expect {|
-    Name: c | Type: Not specified
-    Name: a | Type: String
-    Name: b | Type: String
+    { vars = [((Id "b"), TStr); ((Id "a"), TStr); ((Id "c"), TNull)]; funcs = []
+      }
     |}];
 
 ;;
@@ -78,11 +76,10 @@ e := d or false;
 let%expect_test "test3" =
   type_check test3;
   [%expect {|
-    Name: a | Type: String
-    Name: b | Type: String
-    Name: c | Type: String
-    Name: d | Type: Boolean
-    Name: e | Type: Boolean
+    { vars =
+      [((Id "e"), TBool); ((Id "d"), TBool); ((Id "c"), TStr); ((Id "b"), TStr);
+        ((Id "a"), TStr)];
+      funcs = [] }
     |}];
 
 ;;

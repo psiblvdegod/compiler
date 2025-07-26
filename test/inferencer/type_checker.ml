@@ -12,27 +12,26 @@ let type_check str =
     | Ok(program) ->
       match program |> infer_types with
       | Error err -> print_endline ("Error: " ^ (show_inferencer_error err))
-      | Ok(inferencer_state) -> print_endline (show_inferencer_state inferencer_state)
-
+      | Ok(typed_program) -> print_endline (show_typed_program typed_program)
+  
 let test1 =
 "
-var a b c d e f;
-
+var a;
 a := 1;
-b := 2;
-c := a + b;
-d := c / (10 - a) * b - 0;
-e := b < a;
-f := e;
+var b;
+b := a;
 "
 
 let%expect_test "test1" =
   type_check test1;
   [%expect {|
-    { vars =
-      [((Id "f"), TBool); ((Id "e"), TBool); ((Id "d"), TInt); ((Id "c"), TInt);
-        ((Id "b"), TInt); ((Id "a"), TInt)];
-      funcs = [] }
+    [((Declaration [(Id "a")]), { vars = []; funcs = [] });
+      ((Assignment ((Id "a"), (Int 1))),
+       { vars = [((Id "a"), TNull)]; funcs = [] });
+      ((Declaration [(Id "b")]), { vars = [((Id "a"), TInt)]; funcs = [] });
+      ((Assignment ((Id "b"), (Var (Id "a")))),
+       { vars = [((Id "a"), TInt); ((Id "b"), TNull)]; funcs = [] })
+      ]
     |}];
 
 ;;
@@ -50,8 +49,14 @@ b := a;
 let%expect_test "test2" =
   type_check test2;
   [%expect {|
-    { vars = [((Id "b"), TStr); ((Id "a"), TStr); ((Id "c"), TNull)]; funcs = []
-      }
+    [((Declaration [(Id "a"); (Id "b"); (Id "c")]), { vars = []; funcs = [] });
+      ((Assignment ((Id "a"), (Str "zxc"))),
+       { vars = [((Id "a"), TNull); ((Id "b"), TNull); ((Id "c"), TNull)];
+         funcs = [] });
+      ((Assignment ((Id "b"), (Var (Id "a")))),
+       { vars = [((Id "a"), TStr); ((Id "b"), TNull); ((Id "c"), TNull)];
+         funcs = [] })
+      ]
     |}];
 
 ;;
@@ -76,10 +81,34 @@ e := d or false;
 let%expect_test "test3" =
   type_check test3;
   [%expect {|
-    { vars =
-      [((Id "e"), TBool); ((Id "d"), TBool); ((Id "c"), TStr); ((Id "b"), TStr);
-        ((Id "a"), TStr)];
-      funcs = [] }
+    [((Declaration [(Id "a"); (Id "b"); (Id "c"); (Id "d"); (Id "e")]),
+      { vars = []; funcs = [] });
+      ((Assignment ((Id "a"), (Str "zxc"))),
+       { vars =
+         [((Id "a"), TNull); ((Id "b"), TNull); ((Id "c"), TNull);
+           ((Id "d"), TNull); ((Id "e"), TNull)];
+         funcs = [] });
+      ((Assignment ((Id "b"), (BinOp (Cat, (Var (Id "a")), (Str "123"))))),
+       { vars =
+         [((Id "a"), TStr); ((Id "b"), TNull); ((Id "c"), TNull);
+           ((Id "d"), TNull); ((Id "e"), TNull)];
+         funcs = [] });
+      ((Assignment ((Id "c"), (BinOp (Cat, (Str "1"), (Var (Id "b")))))),
+       { vars =
+         [((Id "b"), TStr); ((Id "a"), TStr); ((Id "c"), TNull);
+           ((Id "d"), TNull); ((Id "e"), TNull)];
+         funcs = [] });
+      ((Assignment ((Id "d"), (Bool true))),
+       { vars =
+         [((Id "c"), TStr); ((Id "b"), TStr); ((Id "a"), TStr);
+           ((Id "d"), TNull); ((Id "e"), TNull)];
+         funcs = [] });
+      ((Assignment ((Id "e"), (BinOp (Or, (Var (Id "d")), (Bool false))))),
+       { vars =
+         [((Id "d"), TBool); ((Id "c"), TStr); ((Id "b"), TStr);
+           ((Id "a"), TStr); ((Id "e"), TNull)];
+         funcs = [] })
+      ]
     |}];
 
 ;;

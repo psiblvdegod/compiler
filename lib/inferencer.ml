@@ -1,22 +1,4 @@
 open Types
-open Printf
-
-type error =
-    | Already_declared
-    | Was_Not_declared
-    | Was_Not_defined
-    | Was_Not_assigned
-    | Operand_type_dismatch
-    | Function_type_dismatch
-    | Already_specified (* TODO : rename *)
-
-type expr_type = | TInt | TBool | TStr | TNull
-
-and state = 
-{
-    vars : (id * expr_type) list;
-    funcs: (id * expr_type * (expr_type list)) list;
-}
 
 let rec find_var id = function
     | [] -> Error Was_Not_declared
@@ -174,33 +156,4 @@ let rec type_check_program state = function
         | Ok state -> type_check_program state rest
     )
 
-let str_of_expr_type = function
-    | TInt  -> "Integer"
-    | TStr  -> "String"
-    | TBool -> "Boolean"
-    | TNull -> "Not specified"
-
-let str_of_error = function
-    | Already_declared       -> "Already_declared"
-    | Was_Not_declared       -> "Was_Not_declared"
-    | Was_Not_defined        -> "Was_Not_defined"
-    | Was_Not_assigned       -> "Was_Not_assigned"
-    | Operand_type_dismatch  -> "Operand_type_dismatch"
-    | Function_type_dismatch -> "Function_type_dismatch"
-    | Already_specified      -> "Already_specified"
-
-let record var_name var_type = sprintf "Name: %s | Type: %s" var_name (str_of_expr_type var_type)
-
-let rec print_vars acc = function
-    | [] -> printf "%s" (String.concat "\n" acc)
-    | (Id var_name, var_type) :: rest ->
-        print_vars (record var_name var_type :: acc) rest
-
-let print_vars vars = print_vars [] vars
-
-let pp_types_of_program program =
-    match type_check_program init_state program with
-    | Error error -> printf "%s\n" (str_of_error error)
-    | Ok(state) -> print_vars state.vars;
-
-;;
+let infer_types program = type_check_program init_state program 

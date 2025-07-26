@@ -57,3 +57,25 @@ and statement =
 
 and program = statement list
 [@@deriving show { with_path = false }]
+
+(* inferencer *)
+
+type inferencer_error =
+    | Already_declared
+    | Was_Not_declared
+    | Was_Not_defined
+    | Was_Not_assigned
+    | Operand_type_dismatch
+    | Function_type_dismatch
+    | Already_specified
+[@@deriving show { with_path = false }]
+
+type expression_type = | TInt | TBool | TStr | TNull
+[@@deriving show { with_path = false }]
+
+and inferencer_state = 
+{
+    vars : (id * expression_type) list;
+    funcs: (id * expression_type * (expression_type list)) list;
+}
+[@@deriving show { with_path = false }]

@@ -278,7 +278,7 @@ let _call_expr_correct_1 = "a := fact 1;"
 
 let%expect_test "call_expr_correct_1" =
     pp_program _call_expr_correct_1;
-    [%expect {| [(Assignment ((Id "a"), (Call ((Id "fact"), [(Int 1)]))))] |}]
+    [%expect {| Error: Invalid_expression |}]
 
 ;;
 
@@ -289,13 +289,7 @@ let _call_expr_correct_2 = "
 
 let%expect_test "call_expr_correct_2" =
     pp_program _call_expr_correct_2;
-    [%expect {|
-      [(While ((BinOp (Eq, (Int 0), (Int 0))),
-          [(Assignment ((Id "a"), (Call ((Id "fact"), [(Int 1); (Var (Id "b"))]))))
-            ]
-          ))
-        ]
-      |}]
+    [%expect {| Error: Invalid_expression |}]
 
 ;;
 
@@ -303,15 +297,7 @@ let _call_expr_correct_3 = "a := f a 1 + f 1 + f;"
 
 let%expect_test "call_expr_correct_3" =
     pp_program _call_expr_correct_3;
-    [%expect {|
-      [(Assignment ((Id "a"),
-          (BinOp (Add,
-             (BinOp (Add, (Call ((Id "f"), [(Var (Id "a")); (Int 1)])),
-                (Call ((Id "f"), [(Int 1)])))),
-             (Var (Id "f"))))
-          ))
-        ]
-      |}]
+    [%expect {| Error: Invalid_expression |}]
 
 ;;
 
@@ -335,14 +321,29 @@ let _call_stmt_correct_1 = "print;"
 
 let%expect_test "call_stmt_correct 1" =
     pp_program _call_stmt_correct_1;
-    [%expect {| Error: Invalid_statement |}]
+    [%expect {| [(Call ((Id "print"), []))] |}]
 
 ;;
 
-let _call_stmt_correct_2 = "print true (false + 1) (\"qwe\" / 0) (1 * 1 + (1 - 1));"
+let _call_stmt_correct_2 = "print 2 2;"
 
 let%expect_test "call_stmt_correct 2" =
     pp_program _call_stmt_correct_2;
-    [%expect {| Error: Invalid_statement |}]
+    [%expect {| [(Call ((Id "print"), [(Int 2); (Int 2)]))] |}]
+
+;;
+
+let _call_stmt_correct_3 = "print (a + b + c) (\"123\" / 0);"
+
+let%expect_test "call_stmt_correct 3" =
+    pp_program _call_stmt_correct_3;
+    [%expect {|
+      [(Call
+          ((Id "print"),
+           [(BinOp (Add, (BinOp (Add, (Var (Id "a")), (Var (Id "b")))),
+               (Var (Id "c"))));
+             (BinOp (Div, (Str "123"), (Int 0)))]))
+        ]
+      |}]
 
 ;;

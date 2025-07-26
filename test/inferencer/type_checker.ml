@@ -153,3 +153,41 @@ let%expect_test "while_test" =
     |}];
 
 ;;
+
+let ite_test =
+"
+var a;
+
+if true then
+  var b;
+  a := 1;
+else
+  var c;
+  a := 0;
+fi
+
+var d;
+"
+
+let%expect_test "ite_test" =
+  type_check ite_test;
+  [%expect {|
+    [((Typed_Declaration [(Id "a")]), { vars = []; funcs = [] });
+      ((Typed_Ite (((Bool true), TBool),
+          [((Typed_Declaration [(Id "b")]),
+            { vars = [((Id "a"), TNull)]; funcs = [] });
+            ((Typed_Assignment ((Id "a"), ((Int 1), TInt))),
+             { vars = [((Id "a"), TNull); ((Id "b"), TNull)]; funcs = [] })
+            ],
+          [((Typed_Declaration [(Id "c")]),
+            { vars = [((Id "a"), TNull)]; funcs = [] });
+            ((Typed_Assignment ((Id "a"), ((Int 0), TInt))),
+             { vars = [((Id "a"), TNull); ((Id "c"), TNull)]; funcs = [] })
+            ]
+          )),
+       { vars = [((Id "a"), TNull)]; funcs = [] });
+      ((Typed_Declaration [(Id "d")]), { vars = [((Id "a"), TNull)]; funcs = [] })
+      ]
+    |}];
+
+;;

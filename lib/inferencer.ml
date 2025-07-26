@@ -7,6 +7,15 @@ let rec find_var name = function
         | (k, _) when k = name -> Ok (head)
         | _ -> find_var name tail
 
+let rec replace_assoc ls key value acc =
+    match ls with
+    | [] -> raise Not_found
+    | (k, v) :: tail ->
+        if k = key then acc @ (key, value) :: tail
+        else replace_assoc tail key value ((k, v) :: acc)
+
+let replace_assoc ls k v = replace_assoc ls k v []
+
 let type_of_binop = function
     | Eq
     | Neq
@@ -98,7 +107,7 @@ let rec specify_program_types scope program acc =
             (match infer_ite scope condition then_program else_program with
             | Error err -> Error err
             | Ok (new_scope, typed_ite) -> specify_program_types new_scope rest (typed_ite :: acc))
-        | _ -> failwith "not implemented"
+    | _ -> failwith "not implemented"
 
 and infer_declaration scope vars =
     if List.exists (fun var -> List.mem_assoc var scope.vars) vars
@@ -116,7 +125,7 @@ and infer_assignment scope name expr =
     | None -> Error Was_Not_declared
     | Some var_type ->
         if var_type = TNull || var_type = expr_type then
-            let vars =  (name, expr_type) :: (List.remove_assoc name scope.vars) in
+            let vars = replace_assoc scope.vars name expr_type in
             let new_scope = {vars = vars; funcs = scope.funcs} in
             Ok(new_scope, (Typed_Assignment(name, (expr, expr_type)), scope))
         else Error Expression_type_dismatch

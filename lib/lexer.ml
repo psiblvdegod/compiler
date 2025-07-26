@@ -1,7 +1,7 @@
 open Token
 
 let token_of_reserved = function
-  | "while" -> Some WHILE 
+  | "while" -> Some WHILE  
   | "done"  -> Some DONE 
   | "var"   -> Some VAR
   | "do"    -> Some DO
@@ -9,6 +9,8 @@ let token_of_reserved = function
   | "then"  -> Some THEN
   | "else"  -> Some ELSE
   | "fi"    -> Some FI
+  | "and" -> Some AND
+  | "or" -> Some OR
   | "true"  -> Some TRUE
   | "false" -> Some FALSE
   | _       -> None
@@ -31,6 +33,7 @@ let token_of_char = function
   | '-'     -> Some MINUS 
   | '*'     -> Some STAR 
   | '/'     -> Some SLASH
+  | '^'     -> Some CAT
   | _       -> None
 
 type lexer_state = {

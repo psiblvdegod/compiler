@@ -12,7 +12,6 @@ type expression =
 
   | BinOp of binary_operation * expression * expression
   | UnOp of unary_operation * expression
-  | Call of call
 [@@deriving show { with_path = false }]
 
 and id = Id of string

@@ -35,7 +35,7 @@ let specify_var_type state var new_var_type =
             let state' = { vars = (var, new_var_type) :: ls; funcs = state.funcs } in Ok (state')
         | _     -> Error (Already_specified)
 
-(* TODO : get all errors with info of invalid arguments *)
+(* TODO
 let rec unfold_res acc = function
     | [] -> Ok (List.rev acc)
     | head :: rest ->
@@ -44,6 +44,8 @@ let rec unfold_res acc = function
         | Ok value  -> unfold_res (value :: acc) rest
 
 let unfold_res = unfold_res []
+
+*)
 
 (* TODO: show which exactly variable was declared *)
 let infer_declaration state vars =
@@ -90,7 +92,8 @@ let rec infer_expression state = function
         (match find_var id state.vars with
         | Error err -> Error err
         | Ok (_, var_type) -> Ok(var_type))
-    
+
+(* TODO
     | Call(name, args) ->
         (* TODO : more detailed error handling *)
         let rec find_by_first name = function
@@ -108,6 +111,7 @@ let rec infer_expression state = function
                 if actual_args_types = expected_args_types (* TODO: somehow process TNull *)
                 then Ok (func_type)
                 else Error (Function_type_dismatch)
+*)
 
 and match_binop_type state binop left right =
     let match_operands_with_same_type expected_operands_type return_type =

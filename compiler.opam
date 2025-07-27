@@ -1,0 +1,14 @@
+opam-version: "2.3.0"
+name: "compiler"
+version: "0.1.0"
+
+depends: [
+  "dune" {>= "3.19.0"}
+]
+
+synopsis: "compiler"
+description: """Translates fictional language into riscv64 Assembly"""
+
+maintainer: "artyombaly@list.ru"
+authors: "psiblvdegod"
+license: "MIT"

@@ -40,49 +40,61 @@ let type_of_unop = function
 
 (* Error if type is TNull*)
 let rec infer_expression scope = function
-    | Int _  -> Ok TInt
-    | Bool _ -> Ok TBool
-    | Str _  -> Ok TStr
+    | Int x  -> Ok (Type_Int(Typed_value x))
+    | Bool x -> Ok (Type_Bool(Typed_value x))
+    | Str x  -> Ok (Type_Str(Typed_value x))
 
-    | BinOp (binop, left, right) -> match_binop_type scope binop left right
+    | BinOp (binop, left, right) ->
+        (match infer_expression scope left with
+        | Error err -> Error err
+        | Ok typed_left ->
+        (match infer_expression scope right with
+        | Error err -> Error err
+        | Ok typed_right -> infer_binop binop typed_left typed_right))
 
-    | UnOp (unop, arg) -> match_unop_type scope unop arg
+    | UnOp (unop, operand) ->
+        (match infer_expression scope operand with
+        | Error err -> Error err
+        | Ok typed_operand -> infer_unop unop typed_operand)
 
     | Var id ->
         (match find_var id scope.vars with
         | Error err -> Error err
-        | Ok (_, var_type) -> Ok(var_type))
+        | Ok (_, var_type) ->
+            match var_type with
+            | TInt -> Ok(Type_Int(Typed_var id))
+            | TBool -> Ok(Type_Bool(Typed_var id))
+            | TStr -> Ok(Type_Str(Typed_var id))
+            | TNull -> Error Was_Not_assigned)
 
-and match_binop_type state binop left right =
-    let match_operands_with_same_type expected_operands_type return_type =
-        (match infer_expression state left with
-        | Error err -> Error err
-        | Ok (left_type) ->
-            match infer_expression state right with
-            | Error err -> Error err
-            | Ok (right_type) ->
-                if left_type = expected_operands_type && right_type = expected_operands_type
-                then Ok return_type
-                else Error Operand_type_dismatch) in
+and infer_binop binop typed_left typed_right =
+    match binop, (typed_left, typed_right) with
+    | (Mul | Div | Add | Sub), (Type_Int _, Type_Int _) ->
+        Ok (Type_Int(Typed_binop(binop, typed_left, typed_right)))
 
-    match binop with
-    | Eq | Neq | Leq | Geq | Lt | Gt -> match_operands_with_same_type TInt TBool
-    | Add | Sub | Div | Mul -> match_operands_with_same_type TInt TInt
-    | And | Or -> match_operands_with_same_type TBool TBool
-    | Cat -> match_operands_with_same_type TStr TStr
+    | (Eq | Neq | Leq | Geq | Lt | Gt), (Type_Int _, Type_Int _) ->
+        Ok (Type_Bool(Typed_binop(binop, typed_left, typed_right)))
 
-and match_unop_type state unop operand =
-    let match_operand expected_operand_type return_type =
-        (match infer_expression state operand with
-        | Error err -> Error err
-        | Ok (operand_type) ->
-            if operand_type = expected_operand_type
-            then Ok return_type
-            else Error Operand_type_dismatch) in
-    match unop with
-    | Neg -> match_operand TInt TInt
-    | Rev -> match_operand TStr TStr
-    | Not -> match_operand TBool TBool
+    | (And | Or), (Type_Bool _, Type_Bool _) ->
+        Ok (Type_Bool(Typed_binop(binop, typed_left, typed_right)))
+
+    | (Cat), (Type_Str _, Type_Str _) ->
+        Ok (Type_Str(Typed_binop(binop, typed_left, typed_right)))
+
+    | _ -> Error Operand_type_dismatch
+    
+and infer_unop unop typed_operand =
+    match unop, typed_operand with
+    | (Neg), (Type_Int _) ->
+        Ok(Type_Int(Typed_unop(unop, typed_operand)))
+        
+    | (Not), (Type_Bool _) ->
+        Ok(Type_Bool(Typed_unop(unop, typed_operand)))
+
+    | (Rev), (Type_Str _) ->
+        Ok(Type_Str(Typed_unop(unop, typed_operand)))
+
+    | _ -> Error Operand_type_dismatch
 
 let init_scope = { vars = []; funcs = []; }
 
@@ -120,35 +132,43 @@ and infer_declaration scope vars =
 and infer_assignment scope name expr =
     match infer_expression scope expr with
     | Error err -> Error err
-    | Ok expr_type ->
+    | Ok typed_expr ->
+    let expr_type = match typed_expr with
+    | Type_Int _ -> TInt
+    | Type_Bool _ -> TBool
+    | Type_Str _ -> TStr in
     match List.assoc_opt name scope.vars with
     | None -> Error Was_Not_declared
     | Some var_type ->
         if var_type = TNull || var_type = expr_type then
             let vars = replace_assoc scope.vars name expr_type in
             let new_scope = {vars = vars; funcs = scope.funcs} in
-            Ok(new_scope, (Typed_Assignment(name, (expr, expr_type)), scope))
+            Ok(new_scope, (Typed_Assignment(name, typed_expr), scope))
         else Error Expression_type_dismatch
 
 and infer_while scope condition program =
-    match infer_expression scope condition with
+     match infer_expression scope condition with
     | Error err -> Error err
-    | Ok expr_type when expr_type = TBool ->
+    | Ok typed_expr ->
+    match typed_expr with
+    | Type_Bool _ ->
         (match specify_program_types scope program [] with
         | Error err -> Error err
-        | Ok typed_program -> Ok (scope, (Typed_While((condition, TBool), typed_program), scope)))
+        | Ok typed_program -> Ok (scope, (Typed_While(typed_expr, typed_program), scope)))
     | _ -> Error Expression_type_dismatch
 
 and infer_ite scope condition then_program else_program =
     match infer_expression scope condition with
     | Error err -> Error err
-    | Ok expr_type when expr_type = TBool ->
+    | Ok typed_expr ->
+    match typed_expr with
+     | Type_Bool _ ->
         (match specify_program_types scope then_program [] with
         | Error err -> Error err
         | Ok typed_then_program -> 
         match specify_program_types scope else_program [] with
         | Error err -> Error err
-        | Ok typed_else_program -> Ok (scope, (Typed_Ite((condition, TBool), typed_then_program, typed_else_program), scope)))
+        | Ok typed_else_program -> Ok (scope, (Typed_Ite(typed_expr, typed_then_program, typed_else_program), scope)))
     | _ -> Error Expression_type_dismatch
 
 let infer_types program = specify_program_types init_scope program []

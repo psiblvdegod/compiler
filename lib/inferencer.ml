@@ -97,7 +97,12 @@ let rec infer_program scope program acc =
             (match infer_ite scope condition then_program else_program with
             | Error err -> Error err
             | Ok (new_scope, typed_ite) -> infer_program new_scope rest (typed_ite :: acc))
-    | _ -> failwith "not implemented"
+        | Call(name, args) ->
+            (match infer_call scope name args with
+            | Error err -> Error err
+            | Ok (new_scope, typed_call) -> infer_program new_scope rest (typed_call :: acc))
+    
+        | _ -> failwith "not implemented"
 
 and infer_declaration scope vars =
     if List.exists (fun var -> List.mem_assoc var scope.vars) vars
@@ -148,5 +153,20 @@ and infer_ite scope condition then_program else_program =
         | Error err -> Error err
         | Ok typed_else_program -> Ok (scope, (Typed_Ite(typed_expr, typed_then_program, typed_else_program), scope)))
     | _ -> Error Expression_type_dismatch
+
+(* TODO : check if function was defined *)
+(* should not change scope so just returns old one *)
+and infer_call scope name args =
+    let rec loop args acc = 
+        match args with
+        | [] -> Ok (List.rev acc)
+        | expr :: rest -> 
+            match infer_expression scope expr with
+            | Error err -> Error err
+            | Ok typed_expr -> loop rest (typed_expr :: acc) in
+
+    match loop args [] with
+    | Error err -> Error err
+    | Ok typed_args -> Ok (scope, (Typed_Call(name, typed_args), scope))
 
 let infer_types program = infer_program init_scope program []

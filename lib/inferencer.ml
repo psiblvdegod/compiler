@@ -11,7 +11,7 @@ let rec replace_assoc ls key value acc =
     match ls with
     | [] -> raise Not_found
     | (k, v) :: tail ->
-        if k = key then acc @ (key, value) :: tail
+        if k = key then (List.rev acc) @ (key, value) :: tail
         else replace_assoc tail key value ((k, v) :: acc)
 
 let replace_assoc ls k v = replace_assoc ls k v []

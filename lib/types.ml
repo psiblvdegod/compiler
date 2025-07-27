@@ -55,7 +55,7 @@ type parser_error =
 [@@deriving show { with_path = false }]
 
 type expression =
-  | Var of var
+  | Var of string
 
   | Int of int
   | Bool of bool
@@ -63,9 +63,6 @@ type expression =
 
   | BinOp of binary_operation * expression * expression
   | UnOp of unary_operation * expression
-[@@deriving show { with_path = false }]
-
-and var = Id of string
 [@@deriving show { with_path = false }]
 
 and unary_operation =
@@ -93,14 +90,14 @@ and binary_operation =
 [@@deriving show { with_path = false }]
 
 and statement =
-  | Declaration of var list
+  | Declaration of string list
 
-  | Assignment of var * expression
+  | Assignment of string * expression
   | While of expression * program
   | Ite of expression * program * program
 
-  | Definition of var * var list * program
-  | Call of var * expression list
+  | Definition of string * string list * program
+  | Call of string * expression list
 [@@deriving show { with_path = false }]
 
 and program = statement list
@@ -124,8 +121,8 @@ type expression_type = | TInt | TBool | TStr | TNull
 
 and scope = 
 {
-    vars : (var * expression_type) list;
-    funcs: (var * expression_type * (expression_type list)) list;
+    vars : (string * expression_type) list;
+    funcs: (string * expression_type * (expression_type list)) list;
 }
 [@@deriving show { with_path = false }]
 
@@ -136,19 +133,19 @@ type typed_expression =
 
 and 'a base_typed_expr =
   | Typed_value of 'a
-  | Typed_var of var
+  | Typed_var of string
   | Typed_unop of unary_operation * typed_expression
   | Typed_binop of binary_operation * typed_expression * typed_expression
 
 and typed_statement =
-  | Typed_Declaration of var list
+  | Typed_Declaration of string list
 
-  | Typed_Assignment of var * typed_expression
+  | Typed_Assignment of string * typed_expression
   | Typed_While of typed_expression * typed_program
   | Typed_Ite of typed_expression * typed_program * typed_program
 
-  | Typed_Definition of var * var list * typed_program
-  | Typed_Call of var * typed_expression list
+  | Typed_Definition of string * string list * typed_program
+  | Typed_Call of string * typed_expression list
 [@@deriving show { with_path = false }]
 
 and typed_program = (typed_statement * scope) list

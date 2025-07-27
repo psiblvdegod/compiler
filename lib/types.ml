@@ -120,7 +120,16 @@ and scope =
 }
 [@@deriving show { with_path = false }]
 
-and typed_expression = expression * expression_type
+type typed_expression =
+  | Type_Int of int base_typed_expr
+  | Type_Bool of bool base_typed_expr
+  | Type_Str of string base_typed_expr
+
+and 'a base_typed_expr =
+  | Typed_value of 'a
+  | Typed_var of id
+  | Typed_unop of unary_operation * typed_expression
+  | Typed_binop of binary_operation * typed_expression * typed_expression
 
 and typed_statement =
   | Typed_Declaration of id list

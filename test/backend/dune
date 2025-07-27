@@ -1,0 +1,7 @@
+(library
+ (name backend_tests)
+ (modules generator)
+ (libraries base stdio ppx_expect compiler)
+ (preprocess
+  (pps ppx_expect ppx_deriving.show))
+ (inline_tests))

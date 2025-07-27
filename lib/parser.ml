@@ -7,6 +7,7 @@ let rec split_by_token token left = function
 
 let split_by_token token token_list = split_by_token token [] token_list
 
+(* TODO : assert that priorities are correct *)
 let match_binop_lvl_4 = function
     | EQ  -> Some Eq
     | NEQ -> Some Neq
@@ -19,7 +20,7 @@ let match_binop_lvl_4 = function
 and match_binop_lvl_3 = function
     | PLUS  -> Some Add
     | MINUS -> Some Sub
-    | CAT   -> Some Cat
+    | CARET -> Some Cat
     | AND   -> Some And
     | OR    -> Some Or
     | _     -> None
@@ -53,22 +54,35 @@ and parse_expr_lvl_2 tokens = make_binop_parsing_priority_level match_binop_lvl_
 
 (* TODO: lambdas *)
 and parse_expr_lvl_1 = function
-    | INT n :: rest -> Ok(Int n, rest)
-    | STR s :: rest -> Ok(Str s, rest)
-    | ID id :: rest -> Ok(Var (Id id), rest)
-    | TRUE  :: rest -> Ok(Bool true, rest)
-    | FALSE :: rest -> Ok(Bool false, rest)
-    | MINUS :: rest ->
-        (match parse_expr_lvl_1 rest with
-        | Error err -> Error err
-        | Ok(expr, rest) -> Ok(UnOp(Neg, expr), rest))
-    | LP    :: rest ->
+    | INT n  :: rest -> Ok(Int n, rest)
+    | STR s  :: rest -> Ok(Str s, rest)
+    | ID var :: rest -> Ok(Var (Id var), rest)
+    | TRUE   :: rest -> Ok(Bool true, rest)
+    | FALSE  :: rest -> Ok(Bool false, rest)
+    | LP     :: rest ->
         (match parse_expr_lvl_4 rest with
         | Error err -> Error err
         | Ok(expr, rest) ->
             (match rest with
             | RP :: rest -> Ok(expr, rest)
             | _ -> Error Invalid_expression))
+
+    (* TODO : generalize *)
+    | MINUS :: rest ->
+        (match parse_expr_lvl_1 rest with
+        | Error err -> Error err
+        | Ok(expr, rest) -> Ok(UnOp(Neg, expr), rest))
+
+    | BANG :: rest ->
+        (match parse_expr_lvl_1 rest with
+        | Error err -> Error err
+        | Ok(expr, rest) -> Ok(UnOp(Not, expr), rest))
+
+     | TILDE :: rest ->
+        (match parse_expr_lvl_1 rest with
+        | Error err -> Error err
+        | Ok(expr, rest) -> Ok(UnOp(Rev, expr), rest))
+    
     | _ -> Error Invalid_expression
 
 let parse_expression tokens = parse_expr_lvl_4 tokens
@@ -108,12 +122,12 @@ let rec parse_to_program acc = function
     | _ -> Error Invalid_statement
 
 and parse_declaration acc = function
-    | SEMICOLON :: rest -> Ok (Declaration(List.rev acc), rest)
+    | SEMI :: rest -> Ok (Declaration(List.rev acc), rest)
     | ID name :: rest -> parse_declaration ((Id name) :: acc) rest
     | _ -> Error Invalid_statement
 
 and parse_assignment name tokens =
-  let expression_tokens, rest = split_by_token SEMICOLON tokens in
+  let expression_tokens, rest = split_by_token SEMI tokens in
   match parse_expression expression_tokens with
   | Ok(expr, []) -> Ok(Assignment(Id name, expr), rest)
   | _ -> Error Invalid_expression
@@ -149,7 +163,7 @@ and parse_ite tokens =
 and parse_call name tokens acc =
     match tokens with
     | [] -> Error Invalid_statement
-    | SEMICOLON :: rest -> Ok(Call(Id name, List.rev acc), rest)
+    | SEMI :: rest -> Ok(Call(Id name, List.rev acc), rest)
     | tokens ->
         match parse_expr_lvl_1 tokens with
         | Error _ -> Ok(Call(Id name, List.rev acc), tokens)

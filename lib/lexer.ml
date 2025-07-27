@@ -9,8 +9,8 @@ let token_of_reserved = function
   | "then"  -> Some THEN
   | "else"  -> Some ELSE
   | "fi"    -> Some FI
-  | "and" -> Some AND
-  | "or" -> Some OR
+  | "and"   -> Some AND
+  | "or"    -> Some OR
   | "true"  -> Some TRUE
   | "false" -> Some FALSE
   | _       -> None
@@ -19,7 +19,7 @@ let token_of_two_chars = function
   | '<', '='    -> Some LEQ 
   | '>', '='    -> Some GEQ 
   | '!', '='    -> Some NEQ 
-  | '=', '='    -> Some EQ 
+  | '=', '='    -> Some EQ
   | ':', '='    -> Some COLONEQQ
   | _           -> None
 
@@ -28,12 +28,14 @@ let token_of_char = function
   | '>'     -> Some GT
   | '('     -> Some LP 
   | ')'     -> Some RP 
-  | ';'     -> Some SEMICOLON 
+  | ';'     -> Some SEMI
   | '+'     -> Some PLUS 
   | '-'     -> Some MINUS 
   | '*'     -> Some STAR 
   | '/'     -> Some SLASH
-  | '^'     -> Some CAT
+  | '^'     -> Some CARET
+  | '~'     -> Some TILDE
+  | '!'     -> Some BANG
   | _       -> None
 
 type lexer_state = {

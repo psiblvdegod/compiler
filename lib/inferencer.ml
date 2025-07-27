@@ -57,14 +57,14 @@ let rec infer_expression scope = function
         | Error err -> Error err
         | Ok typed_operand -> infer_unop unop typed_operand)
 
-    | Var id ->
-        (match find_var id scope.vars with
+    | Var var ->
+        (match find_var var scope.vars with
         | Error err -> Error err
         | Ok (_, var_type) ->
             match var_type with
-            | TInt -> Ok(Type_Int(Typed_var id))
-            | TBool -> Ok(Type_Bool(Typed_var id))
-            | TStr -> Ok(Type_Str(Typed_var id))
+            | TInt -> Ok(Type_Int(Typed_var var))
+            | TBool -> Ok(Type_Bool(Typed_var var))
+            | TStr -> Ok(Type_Str(Typed_var var))
             | TNull -> Error Was_Not_assigned)
 
 and infer_binop binop typed_left typed_right =
@@ -98,7 +98,7 @@ and infer_unop unop typed_operand =
 
 let init_scope = { vars = []; funcs = []; }
 
-let rec specify_program_types scope program acc =
+let rec infer_program scope program acc =
     match program with
     | [] -> Ok (List.rev acc)
     | statement :: rest ->
@@ -106,19 +106,19 @@ let rec specify_program_types scope program acc =
         | Declaration names ->
             (match infer_declaration scope names with
             | Error err -> Error err
-            | Ok (new_scope, typed_declaration) -> specify_program_types new_scope rest (typed_declaration :: acc))
+            | Ok (new_scope, typed_declaration) -> infer_program new_scope rest (typed_declaration :: acc))
         | Assignment (name, expr) ->
             (match infer_assignment scope name expr with
             | Error err -> Error err
-            | Ok (new_scope, typed_assignment) -> specify_program_types new_scope rest (typed_assignment :: acc))
+            | Ok (new_scope, typed_assignment) -> infer_program new_scope rest (typed_assignment :: acc))
         | While (condition, program) ->
             (match infer_while scope condition program with
             | Error err -> Error err
-            | Ok (new_scope, typed_while) -> specify_program_types new_scope rest (typed_while :: acc))
+            | Ok (new_scope, typed_while) -> infer_program new_scope rest (typed_while :: acc))
         | Ite (condition, then_program, else_program) ->
             (match infer_ite scope condition then_program else_program with
             | Error err -> Error err
-            | Ok (new_scope, typed_ite) -> specify_program_types new_scope rest (typed_ite :: acc))
+            | Ok (new_scope, typed_ite) -> infer_program new_scope rest (typed_ite :: acc))
     | _ -> failwith "not implemented"
 
 and infer_declaration scope vars =
@@ -152,7 +152,7 @@ and infer_while scope condition program =
     | Ok typed_expr ->
     match typed_expr with
     | Type_Bool _ ->
-        (match specify_program_types scope program [] with
+        (match infer_program scope program [] with
         | Error err -> Error err
         | Ok typed_program -> Ok (scope, (Typed_While(typed_expr, typed_program), scope)))
     | _ -> Error Expression_type_dismatch
@@ -163,12 +163,12 @@ and infer_ite scope condition then_program else_program =
     | Ok typed_expr ->
     match typed_expr with
      | Type_Bool _ ->
-        (match specify_program_types scope then_program [] with
+        (match infer_program scope then_program [] with
         | Error err -> Error err
         | Ok typed_then_program -> 
-        match specify_program_types scope else_program [] with
+        match infer_program scope else_program [] with
         | Error err -> Error err
         | Ok typed_else_program -> Ok (scope, (Typed_Ite(typed_expr, typed_then_program, typed_else_program), scope)))
     | _ -> Error Expression_type_dismatch
 
-let infer_types program = specify_program_types init_scope program []
+let infer_types program = infer_program init_scope program []

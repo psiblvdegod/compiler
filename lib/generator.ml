@@ -36,51 +36,54 @@ let apply_unop = function
   | Neg -> li t2 (-1) @ mul t1 t1 t2
   | _ -> failwith "not implemented"
 
-let rec compile_expressions scope expressions temps acc =
-  match expressions with
-  | [] -> acc, temps
-  | Type_Int (Typed_value n) :: rest ->
-    let acc = acc
-    @ li t1 n
-    @ push t1
-    in compile_expressions scope rest (temps + 1) acc
+let rec compile_expression scope expression temps acc =
+    match expression with
+    | Type_Int (Typed_value n) ->
+      let acc = acc
+      @ li t1 n
+      @ push t1
+      in acc
 
-  | Type_Int (Typed_var name) :: rest ->
-    let pos = (find_var_index scope name + temps) * alignment in
-    let acc = acc
-    @ lw_from_stack t1 pos
-    @ push t1
-    in compile_expressions scope rest (temps + 1) acc
+    | Type_Int (Typed_var name) ->
+      let pos = (find_var_index scope name + temps) * alignment in
+      let acc = acc
+      @ lw_from_stack t1 pos
+      @ push t1
+      in acc
 
-  | Type_Int (Typed_unop (unop, typed_expr)) :: rest ->
-    let (compile_operand, temps2) = compile_expressions scope [typed_expr] temps [] in
-    let delta = (temps2 - temps) * alignment in
-    let acc = acc
-    @ compile_operand
-    @ lw_from_stack t1 0
-    @ addi sp sp delta
-    @ apply_unop unop
-    @ push t1
-    in compile_expressions scope rest (temps + 1) acc
-  
-  | Type_Int (Typed_binop (binop, typed_left, typed_right)) :: rest ->
-    let (compile_left, temps2) = compile_expressions scope [typed_left] temps [] in
-    let (compile_right, temps3) = compile_expressions scope [typed_right] temps2 [] in
-    let delta1 = (temps3 - temps2) * alignment in
-    let delta2 = (temps3 - temps) * alignment in
-    let acc = acc
-    @ compile_left
-    @ compile_right
-    @ lw_from_stack t1 delta1 (* load left operand *)
-    @ lw_from_stack t2 0      (* load right operand *)
-    @ addi sp sp delta2       (* wipe stack *)
-    @ apply_binop binop
-    @ push t1
-    in compile_expressions scope rest (temps + 1) acc
-  | _ -> failwith "not implemented"
+    | Type_Int (Typed_unop (unop, typed_expr))->
+      let acc = acc
+      @ compile_expressions scope [typed_expr] temps
+      @ lw_from_stack t1 0
+      @ apply_unop unop
+      @ sw_to_stack t1 0
+      in acc
+    
+    | Type_Int (Typed_binop (binop, typed_left, typed_right)) ->
+      let acc = acc
+      @ compile_expressions scope [typed_left; typed_right] temps
+      @ lw_from_stack t1 alignment
+      @ lw_from_stack t2 0
+      @ apply_binop binop
+      @ addi sp sp alignment
+      @ sw_to_stack t1 0
+      in acc
+    | _ -> failwith "not implemented"
 
-let compile_expressions scope expressions =
-  let (res, _) = compile_expressions scope expressions 0 [] in res
+and compile_expressions scope expressions position =
+    let rec loop expressions var_amount code_acc =
+      match expressions with
+      | [] -> code_acc
+      | expr :: rest ->
+      let code_acc = compile_expression scope expr var_amount code_acc in
+      let code_acc = match expr with
+      | Type_Int _ | Type_Bool _ -> code_acc
+      | Type_Str _ -> failwith "not implemented"
+      in loop rest (var_amount + 1) code_acc in
+
+    loop expressions position []
+
+let compile_expressions scope expressions = compile_expressions scope expressions 0
 
 let rec compile_program typed_program acc =
   match typed_program with

@@ -7,7 +7,10 @@ let find_var_index scope name =
   let rec loop ls acc =
   match ls with
   | [] -> raise Not_found
-  | (head, _) :: tail -> if head = name then acc else loop tail (acc + 1) in loop (List.rev scope.vars) 0 
+  | (head, _) :: tail ->
+      if head = name then acc
+      else loop tail (acc + 1) in
+      loop (List.rev scope.vars) 0 
 
 let sp = "sp"
 let t1 = "t1"
@@ -20,7 +23,7 @@ let add dest left right = [sprintf "add %s, %s, %s\n" dest left right]
 let sub dest left right = [sprintf "sub %s, %s, %s\n" dest left right]
 let mul dest left right = [sprintf "mul %s, %s, %s\n" dest left right]
 let div dest left right = [sprintf "div %s, %s, %s\n" dest left right]
-
+(*let mv dest src = [sprintf "mv %s, %s\n" dest src]*)
 let push reg = addi sp sp (-alignment) @ [sprintf "sw %s, (sp)\n" reg]
 let pop reg = [sprintf "lw %s, (sp)\n" reg] @ addi sp sp alignment
 let lw_from_stack reg delta = [sprintf "lw %s, %d(sp)\n" reg delta]
@@ -48,7 +51,7 @@ let rec compile_expression scope expression temps acc =
       in acc
 
     | Type_Int (Typed_var name) ->
-      let pos = (find_var_index scope name + temps) * alignment in
+      let pos = (find_var_index scope name + temps) * alignment in      
       let acc = acc
       @ lw_from_stack t1 pos
       @ push t1
@@ -106,15 +109,12 @@ let rec compile_program typed_program acc =
       @ sw_to_stack t1 pos
       in compile_program rest acc
 
-
-
     | Typed_Call(name, args) ->
       let acc = acc @ (compile_call scope name args) in
       compile_program rest acc
     | _ -> failwith "not implemented"
 
 (* stdlib *)
-
 and compile_call scope name args =
   match name with
   | "print" -> ll_print scope args []

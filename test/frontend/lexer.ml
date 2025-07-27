@@ -35,7 +35,7 @@ let%expect_test "test on correct input 2" =
     MINUS
     STAR
     SLASH
-    SEMICOLON
+    SEMI
     |}];
 
 ;;
@@ -51,7 +51,7 @@ let%expect_test "test on correct input 3" =
     WHILE
     STAR
     DO
-    SEMICOLON
+    SEMI
     |}];
 
 ;;
@@ -69,14 +69,14 @@ let%expect_test "test on correct input 4" =
     (ID "a")
     COLONEQQ
     (ID "b")
-    SEMICOLON
+    SEMI
     ELSE
     (ID "a")
     COLONEQQ
     (ID "c")
-    SEMICOLON
+    SEMI
     FI
-    SEMICOLON
+    SEMI
     |}];
 
 ;;
@@ -102,5 +102,22 @@ let incorrect_input_3 = "\"fdf"
 let%expect_test "test on incorrect input 3" =
   pp_tokens incorrect_input_3;
   [%expect {| Error: Invalid_token |}];
+
+;;
+
+let correct_input_5 = "~a and -b or !c"
+
+let%expect_test "test on correct input 5" =
+  pp_tokens correct_input_5;
+  [%expect {|
+    TILDE
+    (ID "a")
+    AND
+    MINUS
+    (ID "b")
+    OR
+    BANG
+    (ID "c")
+    |}];
 
 ;;

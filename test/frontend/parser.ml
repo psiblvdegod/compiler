@@ -50,6 +50,20 @@ let%expect_test "parse_expression_correct_4" =
 
 ;;
 
+let _parse_expression_correct_5 = "~(str ^ str) and -b or !(true - false)"
+
+let%expect_test "test on correct input 5" =
+  pp_ast _parse_expression_correct_5;
+  [%expect {|
+    (BinOp (Or,
+       (BinOp (And,
+          (UnOp (Rev, (BinOp (Cat, (Var (Id "str")), (Var (Id "str")))))),
+          (UnOp (Neg, (Var (Id "b")))))),
+       (UnOp (Not, (BinOp (Sub, (Bool true), (Bool false)))))))
+    |}];
+
+;;
+
 let pp_program text = 
   match Lexer.tokenize text with
   | Error err -> print_endline ("Error: " ^ show_lexer_error err)

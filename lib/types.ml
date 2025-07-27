@@ -6,36 +6,45 @@ type lexer_error =
 [@@deriving show { with_path = false }]
 
 type token =
-| ID of string
+| STR of string
 | INT of int
 | TRUE
 | FALSE
-| STR of string
+
+| ID of string
+
+| VAR
+| COLONEQQ
+
 | WHILE
 | DO
 | DONE
-| VAR
+
 | IF
 | THEN
 | ELSE
 | FI
+
 | PLUS
 | MINUS
 | STAR
 | SLASH
-| CAT
 | AND
 | OR
+| CARET
+| TILDE
+| BANG
+
 | EQ
 | NEQ
-| COLONEQQ
 | LEQ
 | GEQ
 | LT
 | GT
+
 | LP
 | RP
-| SEMICOLON
+| SEMI
 [@@deriving show { with_path = false }]
 
 (* parser *)
@@ -46,7 +55,7 @@ type parser_error =
 [@@deriving show { with_path = false }]
 
 type expression =
-  | Var of id
+  | Var of var
 
   | Int of int
   | Bool of bool
@@ -56,7 +65,7 @@ type expression =
   | UnOp of unary_operation * expression
 [@@deriving show { with_path = false }]
 
-and id = Id of string
+and var = Id of string
 [@@deriving show { with_path = false }]
 
 and unary_operation =
@@ -84,14 +93,14 @@ and binary_operation =
 [@@deriving show { with_path = false }]
 
 and statement =
-  | Declaration of id list
+  | Declaration of var list
 
-  | Assignment of id * expression
+  | Assignment of var * expression
   | While of expression * program
   | Ite of expression * program * program
 
-  | Definition of id * id list * program
-  | Call of id * expression list
+  | Definition of var * var list * program
+  | Call of var * expression list
 [@@deriving show { with_path = false }]
 
 and program = statement list
@@ -115,8 +124,8 @@ type expression_type = | TInt | TBool | TStr | TNull
 
 and scope = 
 {
-    vars : (id * expression_type) list;
-    funcs: (id * expression_type * (expression_type list)) list;
+    vars : (var * expression_type) list;
+    funcs: (var * expression_type * (expression_type list)) list;
 }
 [@@deriving show { with_path = false }]
 
@@ -127,19 +136,19 @@ type typed_expression =
 
 and 'a base_typed_expr =
   | Typed_value of 'a
-  | Typed_var of id
+  | Typed_var of var
   | Typed_unop of unary_operation * typed_expression
   | Typed_binop of binary_operation * typed_expression * typed_expression
 
 and typed_statement =
-  | Typed_Declaration of id list
+  | Typed_Declaration of var list
 
-  | Typed_Assignment of id * typed_expression
+  | Typed_Assignment of var * typed_expression
   | Typed_While of typed_expression * typed_program
   | Typed_Ite of typed_expression * typed_program * typed_program
 
-  | Typed_Definition of id * id list * typed_program
-  | Typed_Call of id * typed_expression list
+  | Typed_Definition of var * var list * typed_program
+  | Typed_Call of var * typed_expression list
 [@@deriving show { with_path = false }]
 
 and typed_program = (typed_statement * scope) list

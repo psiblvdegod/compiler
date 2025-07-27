@@ -16,28 +16,6 @@ let rec replace_assoc ls key value acc =
 
 let replace_assoc ls k v = replace_assoc ls k v []
 
-let type_of_binop = function
-    | Eq
-    | Neq
-    | Leq
-    | Geq
-    | Lt
-    | Gt
-    | And
-    | Or -> TBool
-    
-    | Mul
-    | Div
-    | Add
-    | Sub -> TInt
-
-    | Cat -> TStr
-
-let type_of_unop = function
-    | Neg -> TInt
-    | Not -> TBool
-    | Rev -> TStr
-
 (* Error if type is TNull*)
 let rec infer_expression scope = function
     | Int x  -> Ok (Type_Int(Typed_value x))

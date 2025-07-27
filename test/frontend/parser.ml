@@ -23,8 +23,8 @@ let%expect_test "parse_expression_correct_2" =
     pp_ast _parse_expression_correct_2;
     [%expect {|
       (BinOp (Add,
-         (BinOp (Add, (Var (Id "asd")), (BinOp (Mul, (Var (Id "zxc")), (Int 42))))),
-         (Var (Id "qwe"))))
+         (BinOp (Add, (Var "asd"), (BinOp (Mul, (Var "zxc"), (Int 42))))),
+         (Var "qwe")))
       |}]
 
 ;;
@@ -33,7 +33,7 @@ let _parse_expression_correct_3 = "a * (b + c)"
 
 let%expect_test "parse_expression_correct_3" =
     pp_ast _parse_expression_correct_3;
-    [%expect {| (BinOp (Mul, (Var (Id "a")), (BinOp (Add, (Var (Id "b")), (Var (Id "c")))))) |}]
+    [%expect {| (BinOp (Mul, (Var "a"), (BinOp (Add, (Var "b"), (Var "c"))))) |}]
 
 ;;
 
@@ -42,8 +42,8 @@ let _parse_expression_correct_4 = "a - (b + c) * (1 / 2)"
 let%expect_test "parse_expression_correct_4" =
     pp_ast _parse_expression_correct_4;
     [%expect {|
-      (BinOp (Sub, (Var (Id "a")),
-         (BinOp (Mul, (BinOp (Add, (Var (Id "b")), (Var (Id "c")))),
+      (BinOp (Sub, (Var "a"),
+         (BinOp (Mul, (BinOp (Add, (Var "b"), (Var "c"))),
             (BinOp (Div, (Int 1), (Int 2)))))
          ))
       |}]
@@ -56,9 +56,8 @@ let%expect_test "test on correct input 5" =
   pp_ast _parse_expression_correct_5;
   [%expect {|
     (BinOp (Or,
-       (BinOp (And,
-          (UnOp (Rev, (BinOp (Cat, (Var (Id "str")), (Var (Id "str")))))),
-          (UnOp (Neg, (Var (Id "b")))))),
+       (BinOp (And, (UnOp (Rev, (BinOp (Cat, (Var "str"), (Var "str"))))),
+          (UnOp (Neg, (Var "b"))))),
        (UnOp (Not, (BinOp (Sub, (Bool true), (Bool false)))))))
     |}];
 
@@ -76,7 +75,7 @@ let _assignment_correct_1 = "a := b; c := 5;"
 
 let%expect_test "assignment_correct_1" =
     pp_program _assignment_correct_1;
-    [%expect {| [(Assignment ((Id "a"), (Var (Id "b")))); (Assignment ((Id "c"), (Int 5)))] |}]
+    [%expect {| [(Assignment ("a", (Var "b"))); (Assignment ("c", (Int 5)))] |}]
 
 ;;
 
@@ -85,8 +84,8 @@ let _assignment_correct_2 = "a := 1 + b * 2;"
 let%expect_test "assignment_correct_1" =
     pp_program _assignment_correct_2;
     [%expect {|
-      [(Assignment ((Id "a"),
-          (BinOp (Add, (Int 1), (BinOp (Mul, (Var (Id "b")), (Int 2)))))))
+      [(Assignment ("a", (BinOp (Add, (Int 1), (BinOp (Mul, (Var "b"), (Int 2)))))
+          ))
         ]
       |}]
 
@@ -117,8 +116,7 @@ let%expect_test "while_correct_1" =
     pp_program _while_correct_1;
     [%expect {|
       [(While ((BinOp (Leq, (Int 1), (Int 2))),
-          [(Assignment ((Id "a"), (BinOp (Add, (Var (Id "b")), (Var (Id "c"))))))]
-          ))
+          [(Assignment ("a", (BinOp (Add, (Var "b"), (Var "c")))))]))
         ]
       |}]
 
@@ -138,11 +136,11 @@ let%expect_test "while_correct_2" =
     pp_program _while_correct_2;
     [%expect {|
       [(While ((Bool true),
-          [(Assignment ((Id "a"), (Int 0)));
-            (While ((Bool true), [(Assignment ((Id "a"), (Int 0)))]));
-            (Assignment ((Id "a"), (Int 0)))]
+          [(Assignment ("a", (Int 0)));
+            (While ((Bool true), [(Assignment ("a", (Int 0)))]));
+            (Assignment ("a", (Int 0)))]
           ));
-        (Assignment ((Id "a"), (Int 0)))]
+        (Assignment ("a", (Int 0)))]
       |}]
 
 ;;
@@ -156,7 +154,7 @@ let%expect_test "while_correct_3" =
     pp_program _while_correct_3;
     [%expect {|
       [(While ((BinOp (Add, (Str "abc"), (BinOp (Div, (Bool true), (Int 0))))),
-          [(Assignment ((Id "a"), (BinOp (Add, (Bool true), (Var (Id "c"))))))]))
+          [(Assignment ("a", (BinOp (Add, (Bool true), (Var "c")))))]))
         ]
       |}]
 
@@ -189,8 +187,8 @@ let _ite_correct_1 = "if a == \"123\" then a := 1; fi"
 let%expect_test "ite_correct_1" =
   pp_program _ite_correct_1;
   [%expect {|
-    [(Ite ((BinOp (Eq, (Var (Id "a")), (Str "123"))),
-        [(Assignment ((Id "a"), (Int 1)))], []))
+    [(Ite ((BinOp (Eq, (Var "a"), (Str "123"))), [(Assignment ("a", (Int 1)))],
+        []))
       ]
     |}]
 
@@ -201,9 +199,8 @@ let _ite_correct_2 = "if a != a then var a b c; else var abc; fi"
 let%expect_test "ite_correct_2" =
   pp_program _ite_correct_2;
   [%expect {|
-    [(Ite ((BinOp (Neq, (Var (Id "a")), (Var (Id "a")))),
-        [(Declaration [(Id "a"); (Id "b"); (Id "c")])],
-        [(Declaration [(Id "abc")])]))
+    [(Ite ((BinOp (Neq, (Var "a"), (Var "a"))), [(Declaration ["a"; "b"; "c"])],
+        [(Declaration ["abc"])]))
       ]
     |}]
 
@@ -224,13 +221,12 @@ fi"
 let%expect_test "ite_correct_3" =
   pp_program _ite_correct_3;
   [%expect {|
-    [(Ite ((BinOp (Eq, (Var (Id "a")), (Int 0))),
-        [(Ite ((BinOp (Eq, (Var (Id "b")), (Int 0))),
-            [(Assignment ((Id "c"), (Int 0))); (Assignment ((Id "d"), (Int 0)))],
-            []))
+    [(Ite ((BinOp (Eq, (Var "a"), (Int 0))),
+        [(Ite ((BinOp (Eq, (Var "b"), (Int 0))),
+            [(Assignment ("c", (Int 0))); (Assignment ("d", (Int 0)))], []))
           ],
-        [(Ite ((BinOp (Eq, (Var (Id "g")), (Int 0))),
-            [(Assignment ((Id "h"), (Int 0)))], []))
+        [(Ite ((BinOp (Eq, (Var "g"), (Int 0))), [(Assignment ("h", (Int 0)))],
+            []))
           ]
         ))
       ]
@@ -250,12 +246,11 @@ done"
 let%expect_test "factorial" =
     pp_program _factorial;
     [%expect {|
-      [(Declaration [(Id "n"); (Id "acc")]); (Assignment ((Id "n"), (Int 5)));
-        (Assignment ((Id "acc"), (Int 1)));
-        (While ((BinOp (Gt, (Var (Id "n")), (Int 1))),
-           [(Assignment ((Id "acc"),
-               (BinOp (Mul, (Var (Id "acc")), (Var (Id "n"))))));
-             (Assignment ((Id "n"), (BinOp (Sub, (Var (Id "n")), (Int 1)))))]
+      [(Declaration ["n"; "acc"]); (Assignment ("n", (Int 5)));
+        (Assignment ("acc", (Int 1)));
+        (While ((BinOp (Gt, (Var "n"), (Int 1))),
+           [(Assignment ("acc", (BinOp (Mul, (Var "acc"), (Var "n")))));
+             (Assignment ("n", (BinOp (Sub, (Var "n"), (Int 1)))))]
            ))
         ]
       |}]
@@ -276,13 +271,12 @@ done"
 let%expect_test "fibonacci" =
     pp_program _fibonacci;
     [%expect {|
-      [(Declaration [(Id "a"); (Id "b"); (Id "n")]);
-        (Assignment ((Id "n"), (Int 5))); (Assignment ((Id "a"), (Int 0)));
-        (Assignment ((Id "b"), (Int 1)));
-        (While ((BinOp (Gt, (Var (Id "n")), (Int 1))),
-           [(Assignment ((Id "b"), (BinOp (Add, (Var (Id "a")), (Var (Id "b"))))));
-             (Assignment ((Id "a"), (BinOp (Sub, (Var (Id "b")), (Var (Id "a"))))));
-             (Assignment ((Id "n"), (BinOp (Sub, (Var (Id "n")), (Int 1)))))]
+      [(Declaration ["a"; "b"; "n"]); (Assignment ("n", (Int 5)));
+        (Assignment ("a", (Int 0))); (Assignment ("b", (Int 1)));
+        (While ((BinOp (Gt, (Var "n"), (Int 1))),
+           [(Assignment ("b", (BinOp (Add, (Var "a"), (Var "b")))));
+             (Assignment ("a", (BinOp (Sub, (Var "b"), (Var "a")))));
+             (Assignment ("n", (BinOp (Sub, (Var "n"), (Int 1)))))]
            ))
         ]
       |}]
@@ -320,7 +314,7 @@ let _call_stmt_correct_1 = "print;"
 
 let%expect_test "call_stmt_correct 1" =
     pp_program _call_stmt_correct_1;
-    [%expect {| [(Call ((Id "print"), []))] |}]
+    [%expect {| [(Call ("print", []))] |}]
 
 ;;
 
@@ -328,7 +322,7 @@ let _call_stmt_correct_2 = "print 2 2;"
 
 let%expect_test "call_stmt_correct 2" =
     pp_program _call_stmt_correct_2;
-    [%expect {| [(Call ((Id "print"), [(Int 2); (Int 2)]))] |}]
+    [%expect {| [(Call ("print", [(Int 2); (Int 2)]))] |}]
 
 ;;
 
@@ -337,9 +331,8 @@ let _call_stmt_correct_3 = "print (a + b + c) (\"123\" / 0);"
 let%expect_test "call_stmt_correct 3" =
     pp_program _call_stmt_correct_3;
     [%expect {|
-      [(Call ((Id "print"),
-          [(BinOp (Add, (BinOp (Add, (Var (Id "a")), (Var (Id "b")))),
-              (Var (Id "c"))));
+      [(Call ("print",
+          [(BinOp (Add, (BinOp (Add, (Var "a"), (Var "b"))), (Var "c")));
             (BinOp (Div, (Str "123"), (Int 0)))]
           ))
         ]

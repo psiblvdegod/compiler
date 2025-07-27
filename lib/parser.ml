@@ -56,7 +56,7 @@ and parse_expr_lvl_2 tokens = make_binop_parsing_priority_level match_binop_lvl_
 and parse_expr_lvl_1 = function
     | INT n  :: rest -> Ok(Int n, rest)
     | STR s  :: rest -> Ok(Str s, rest)
-    | ID var :: rest -> Ok(Var (Id var), rest)
+    | ID var :: rest -> Ok(Var var, rest)
     | TRUE   :: rest -> Ok(Bool true, rest)
     | FALSE  :: rest -> Ok(Bool false, rest)
     | LP     :: rest ->
@@ -123,13 +123,13 @@ let rec parse_to_program acc = function
 
 and parse_declaration acc = function
     | SEMI :: rest -> Ok (Declaration(List.rev acc), rest)
-    | ID name :: rest -> parse_declaration ((Id name) :: acc) rest
+    | ID name :: rest -> parse_declaration (name :: acc) rest
     | _ -> Error Invalid_statement
 
 and parse_assignment name tokens =
   let expression_tokens, rest = split_by_token SEMI tokens in
   match parse_expression expression_tokens with
-  | Ok(expr, []) -> Ok(Assignment(Id name, expr), rest)
+  | Ok(expr, []) -> Ok(Assignment(name, expr), rest)
   | _ -> Error Invalid_expression
 
 and parse_while tokens =
@@ -163,10 +163,10 @@ and parse_ite tokens =
 and parse_call name tokens acc =
     match tokens with
     | [] -> Error Invalid_statement
-    | SEMI :: rest -> Ok(Call(Id name, List.rev acc), rest)
+    | SEMI :: rest -> Ok(Call(name, List.rev acc), rest)
     | tokens ->
         match parse_expr_lvl_1 tokens with
-        | Error _ -> Ok(Call(Id name, List.rev acc), tokens)
+        | Error _ -> Ok(Call(name, List.rev acc), tokens)
         | Ok (expr, rest) -> parse_call name rest (expr :: acc)
 
 let parse_expression tokens =

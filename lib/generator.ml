@@ -8,6 +8,7 @@ let t0 = "t0"
 let t1 = "t1"
 let t2 = "t2"
 let s1 = "s1"
+let s2 = "s2"
 let a0 = "a0"
 let a1 = "a1"
 let a2 = "a2"
@@ -80,7 +81,7 @@ let store_str dest str =
 
 (* source <- a0 *)
 (* result -> a0 *)
-let str_len_asciz =
+let str_len_asciz () =
   let loop_label = generate_label () in
   let end_loop_label = generate_label () in []
     @ mv a1 a0
@@ -104,17 +105,22 @@ let apply_binop = function
   | Sub -> sub t1 t1 t2
   | Mul -> mul t1 t1 t2
   | Div -> div t1 t1 t2
-  
+
   | Lt  -> slt t1 t1 t2
   | Gt  -> sgt t1 t1 t2
   | Eq  -> seq t1 t1 t2
   | Leq -> sle t1 t1 t2
   | Geq -> sge t1 t1 t2
   | Neq -> sne t1 t1 t2
+
+  | And -> mul t1 t1 t2
+  | Or  -> add t1 t1 t2 @ sge t1 t1 zero
+
   | _ -> failwith "not implemented"
 
 let apply_unop = function
   | Neg -> li t2 (-1) @ mul t1 t1 t2
+  | Not -> seq t1 t1 zero
   | _ -> failwith "not implemented"
 
 let rec compile_expression scope expression temps acc =
@@ -294,7 +300,10 @@ and ll_print scope exprs acc =
     let acc = acc @ compile_expressions scope [expr] in
     let acc = 
     match expr with
-    | Type_Bool _ (* TODO : make prettier *)
+    | Type_Bool _ ->
+      acc
+      @ pop a0
+      @ print_bool a0
     | Type_Int _ ->
       acc
       @ pop a0
@@ -304,7 +313,7 @@ and ll_print scope exprs acc =
       @ ld_from_stack a0 0
       @ addi sp sp alignment
       @ mv s1 a0
-      @ str_len_asciz
+      @ str_len_asciz ()
       @ print_bytes_from s1 a0
       
     in ll_print scope rest acc
@@ -336,6 +345,27 @@ and print_ch_imm ch = []
     @ li a7 sys_write
     @ ecall
     @ addi sp sp 1
+
+and print_str_imm str = 
+    let len = String.length str in []
+    @ addi sp sp (-len)
+    @ store_str sp str
+    @ li t0 len
+    @ print_bytes_from sp t0
+    @ addi sp sp len
+
+and print_bool reg =
+    let true_label = generate_label () in
+    let false_label = generate_label () in 
+    let end_label = generate_label () in []
+    @ branch_true reg true_label
+    @ branch_false reg false_label
+    @ [true_label ^ ":\n"]
+    @ print_str_imm "true"
+    @ jump end_label
+    @ [false_label ^ ":\n"]
+    @ print_str_imm "false"
+    @ [end_label ^ ":\n"]
 
 let assembly_of_typed_program typed_program =
   let instructions, _ = compile_program typed_program 0 [] in

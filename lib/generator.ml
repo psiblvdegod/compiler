@@ -7,6 +7,8 @@ let sp = "sp"
 let t0 = "t0"
 let t1 = "t1"
 let t2 = "t2"
+let t3 = "t3"
+let t4 = "t4"
 let s1 = "s1"
 let s2 = "s2"
 let a0 = "a0"
@@ -25,6 +27,7 @@ let add dest left right = [sprintf "add %s, %s, %s\n" dest left right]
 let sub dest left right = [sprintf "sub %s, %s, %s\n" dest left right]
 let mul dest left right = [sprintf "mul %s, %s, %s\n" dest left right]
 let div dest left right = [sprintf "div %s, %s, %s\n" dest left right]
+let rem dest left right = [sprintf "rem %s, %s, %s\n" dest left right]
 let slt dest left right = [sprintf "slt %s, %s, %s\n" dest left right]
 let sgt dest left right = [sprintf "slt %s, %s, %s\n" dest right left]
 let sle dest left right = [sprintf "slt %s, %s, %s\n" dest right left; sprintf "seqz %s, %s\n" dest dest]
@@ -37,6 +40,7 @@ let lw_from_stack reg delta = [sprintf "lw %s, %d(sp)\n" reg delta]
 let ld_from_stack reg delta = [sprintf "ld %s, %d(sp)\n" reg delta]
 let sw_to_stack reg delta = [sprintf "sw %s, %d(sp)\n" reg delta]
 let sd_to_stack reg delta = [sprintf "sd %s, %d(sp)\n" reg delta]
+let sb_to_stack reg delta = [sprintf "sb %s, %d(sp)\n" reg delta]
 let call f = [sprintf "call %s\n" f]
 let jump label = [sprintf "j %s\n" label]
 let branch_true reg label = ["li t0, 1\n"; sprintf "beq %s, t0, %s\n" reg label]
@@ -79,8 +83,6 @@ let store_str dest str =
     @ addi t1 t1 1 in
     let init = mv t1 dest in List.fold_left (fun acc ch -> acc @ add ch) init ls
 
-(* source <- a0 *)
-(* result -> a0 *)
 let str_len_asciz () =
   let loop_label = generate_label () in
   let end_loop_label = generate_label () in []
@@ -95,8 +97,7 @@ let str_len_asciz () =
     @ jump loop_label
     @ [end_loop_label ^ ":\n"]
 
-(* null-terminated *)
-let create_str str = []
+let create_asciz str = []
     @ mmap_page
     @ store_str a0 (str ^ "\x00")
 
@@ -116,12 +117,12 @@ let apply_binop = function
   | And -> mul t1 t1 t2
   | Or  -> add t1 t1 t2 @ sge t1 t1 zero
 
-  | _ -> failwith "not implemented"
+  | _ -> raise Not_implemented
 
 let apply_unop = function
   | Neg -> li t2 (-1) @ mul t1 t1 t2
   | Not -> seq t1 t1 zero
-  | _ -> failwith "not implemented"
+  | _ -> raise Not_implemented
 
 let rec compile_expression scope expression temps acc =
     match expression with
@@ -139,7 +140,7 @@ let rec compile_expression scope expression temps acc =
 
     | Type_Str (Typed_value s) ->
       let acc = acc
-      @ create_str s
+      @ create_asciz s
       @ addi sp sp (-alignment)
       @ ["sd a0, (sp)\n"]
       in acc
@@ -284,14 +285,15 @@ let rec compile_program typed_program local_cnt acc =
 
     | Typed_Call(name, args) ->
       let acc = acc @ (compile_call scope name args) in compile_program rest local_cnt acc
-    | _ -> failwith "not implemented"
+    
+    | _ -> raise Not_implemented
 
 (* stdlib *)
 and compile_call scope name args =
   match name with
-  | "print" -> ll_print scope args []
+  | "print"  -> ll_print scope args []
   | "printn" -> ll_printn scope args []
-  | _ -> failwith "not implemented"
+  | _        -> raise Not_supported
 
 and ll_print scope exprs acc =
   match exprs with
@@ -307,7 +309,7 @@ and ll_print scope exprs acc =
     | Type_Int _ ->
       acc
       @ pop a0
-      @ call "print_number"
+      @ print_number a0
     | Type_Str _ ->
       acc
       @ ld_from_stack a0 0
@@ -323,7 +325,7 @@ and ll_printn scope exprs acc =
   | [] -> acc
   | expr :: rest ->
     let acc = ll_print scope [expr] acc in
-    let acc = acc @ print_ch_imm '\n' in
+    let acc = acc @ print_str_imm "\n" in
     ll_printn scope rest acc
 
 and print_bytes_from src len = []
@@ -334,17 +336,6 @@ and print_bytes_from src len = []
     @ mv a2 t2
     @ li a7 sys_write
     @ ecall
-
-and print_ch_imm ch = []
-    @ addi sp sp (-1)
-    @ li t0 (Char.code ch)
-    @ ["sb t0, (sp)\n"]
-    @ li a0 1
-    @ mv a1 sp
-    @ li a2 1
-    @ li a7 sys_write
-    @ ecall
-    @ addi sp sp 1
 
 and print_str_imm str = 
     let len = String.length str in []
@@ -366,6 +357,43 @@ and print_bool reg =
     @ [false_label ^ ":\n"]
     @ print_str_imm "false"
     @ [end_label ^ ":\n"]
+
+and abs reg =
+    let skip_label = generate_label () in []
+    @ slt t0 reg zero
+    @ branch_false t0 skip_label
+    @ li t1 (-1)
+    @ mul reg reg t1
+    @ [skip_label ^ ":\n"]
+
+and print_number reg =
+  let acc = []
+  @ mv a1 reg
+  @ li a2 0  (* len *)
+  @ li a3 10 (* base *)
+  @ slt a4 a1 zero
+  @ abs a1 in
+  let loop_label = generate_label () in
+  let acc = acc
+  @ [loop_label ^ ":\n"]
+  @ rem t0 a1 a3
+  @ div a1 a1 a3
+  @ addi t0 t0 (Char.code '0')
+  @ addi sp sp (-1)
+  @ sb_to_stack t0 0
+  @ addi a2 a2 1
+  @ seq t1 a1 zero
+  @ branch_false t1 loop_label in
+  let skip_label = generate_label () in acc
+  @ branch_false a4 skip_label
+  @ addi sp sp (-1)
+  @ li t0 (Char.code '-')
+  @ sb_to_stack t0 0
+  @ addi a2 a2 1
+  @ [skip_label ^ ":\n"]
+  @ mv s1 a2
+  @ print_bytes_from sp a2
+  @ add sp sp s1
 
 let assembly_of_typed_program typed_program =
   let instructions, _ = compile_program typed_program 0 [] in

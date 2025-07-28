@@ -52,3 +52,61 @@ let%expect_test "test3" =
     |}];
 
 ;;
+
+
+let _factorial = "
+var n acc sign;
+
+n := -5;
+acc := 1;
+sign := n < 0;
+
+while n != 0 do
+    acc := acc * n;  
+    if
+      sign
+    then
+      n := n + 1;
+    else 
+      n := n - 1;
+    fi
+done
+
+print acc;
+"
+
+let%expect_test "factorial" =
+    App.run _factorial;
+    [%expect {| -120 |}]
+
+;;
+
+let _fibonacci = "
+var a b n;
+
+n := 7;
+a := 0;
+b := 1;
+
+while n > 1 do
+  b := a + b; 
+  a := b - a;
+  n := n - 1;
+
+  print b;
+
+done
+"
+
+let%expect_test "fibonacci" =
+    App.run _fibonacci;
+    [%expect {|
+      1
+      2
+      3
+      5
+      8
+      13
+      |}]
+
+;;

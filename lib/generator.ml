@@ -31,7 +31,6 @@ let add dest left right = [sprintf "add %s, %s, %s\n" dest left right]
 let sub dest left right = [sprintf "sub %s, %s, %s\n" dest left right]
 let mul dest left right = [sprintf "mul %s, %s, %s\n" dest left right]
 let div dest left right = [sprintf "div %s, %s, %s\n" dest left right]
-
 let slt dest left right = [sprintf "slt %s, %s, %s\n" dest left right]
 let sgt dest left right = [sprintf "slt %s, %s, %s\n" dest right left]
 let sle dest left right = [sprintf "slt %s, %s, %s\n" dest right left; sprintf "seqz %s, %s\n" dest dest]
@@ -48,8 +47,6 @@ let call f = [sprintf "call %s\n" f]
 let jump label = [sprintf "j %s\n" label]
 let branch_true reg label = ["li t0, 1\n"; sprintf "beq %s, t0, %s\n" reg label]
 let branch_false reg label = [sprintf "beqz %s, %s\n" reg label]
-
-let print_number = "print_number"
 
 let apply_binop = function
   | Add -> add t1 t1 t2
@@ -124,29 +121,35 @@ and compile_expressions scope expressions position =
 
 let compile_expressions scope expressions = compile_expressions scope expressions 0
 
-let rec compile_program typed_program acc =
+let rec compile_program typed_program local_cnt acc =
   match typed_program with
-  | [] -> acc
+  | [] -> acc, local_cnt
   | (typed_statement, scope) :: rest ->
+    
     match typed_statement with
-    (* TODO : wipe local variables from stack  *)
+
     | Typed_Declaration names ->
+      let local_cnt = local_cnt + (List.length names) in
       let delta = -(List.length names) * alignment in
       let acc = acc
       @ addi sp sp delta
-    in compile_program rest acc
+      in compile_program rest local_cnt acc
+
     | Typed_Assignment(name, typed_expr) ->
       let pos = find_var_index scope name * alignment in
       let acc = acc
       @ compile_expressions scope [typed_expr]
       @ pop t1
       @ sw_to_stack t1 pos
-      in compile_program rest acc
+      in compile_program rest local_cnt acc
     
     | Typed_While(condition, body_program) ->
       let while_label = generate_label () in
       let do_label = generate_label () in
       let done_label = generate_label () in
+
+      let compiled_body, local_cnt' = compile_program body_program local_cnt [] in
+      let wipe_locals = addi sp sp ((local_cnt' - local_cnt) * alignment) in
 
       let acc = acc
       @ [while_label ^ ":\n"] 
@@ -155,15 +158,21 @@ let rec compile_program typed_program acc =
       @ branch_true t1 do_label
       @ branch_false t1 done_label
       @ [do_label ^ ":\n"]
-      @ compile_program body_program []
+      @ compiled_body
+      @ wipe_locals
       @ jump while_label
       @ [done_label ^ ":\n"]
-      in compile_program rest acc
+      in compile_program rest local_cnt acc
 
     | Typed_Ite(condition, then_program, else_program) ->
       let then_label = generate_label () in
       let else_label = generate_label () in
       let fi_label = generate_label () in
+
+      let compiled_then, locals_cnt_then = compile_program then_program local_cnt [] in
+      let compiled_else, locals_cnt_else = compile_program else_program local_cnt [] in
+      let wipe_locals_then = addi sp sp ((locals_cnt_then - local_cnt) * alignment) in
+      let wipe_locals_else = addi sp sp ((locals_cnt_else - local_cnt) * alignment) in
 
       let acc = acc
       @ compile_expressions scope [condition] 
@@ -171,22 +180,24 @@ let rec compile_program typed_program acc =
       @ branch_true t1 then_label
       @ branch_false t1 else_label
       @ [then_label ^ ":\n"]
-      @ compile_program then_program []
+      @ compiled_then
+      @ wipe_locals_then
       @ jump fi_label
       @ [else_label ^ ":\n"]
-      @ compile_program else_program []
+      @ compiled_else
+      @ wipe_locals_else
       @ [fi_label ^ ":\n"]
-      in compile_program rest acc
+      in compile_program rest local_cnt acc
 
     | Typed_Call(name, args) ->
-      let acc = acc @ (compile_call scope name args) in
-      compile_program rest acc
+      let acc = acc @ (compile_call scope name args) in compile_program rest local_cnt acc
     | _ -> failwith "not implemented"
 
 (* stdlib *)
 and compile_call scope name args =
   match name with
   | "print" -> ll_print scope args []
+  | "printn" -> ll_printn scope args []
   | _ -> failwith "not implemented"
 
 and ll_print scope exprs acc =
@@ -196,11 +207,29 @@ and ll_print scope exprs acc =
     let acc = acc @ compile_expressions scope [expr] in
     let acc = 
     match expr with
+    | Type_Bool _ (* TODO : make prettier *)
     | Type_Int _ ->
       acc
       @ pop a0
-      @ call print_number
+      @ call "print_number"
     | _ -> failwith "not implemented"
     in ll_print scope rest acc
 
-let assembly_of_typed_program typed_program = String.concat String.empty (compile_program typed_program [])
+and ll_printn scope exprs acc =
+  match exprs with
+  | [] -> acc
+  | expr :: rest ->
+    let acc = acc @ compile_expressions scope [expr] in
+    let acc = 
+    match expr with
+    | Type_Bool _ (* TODO : make prettier *)
+    | Type_Int _ ->
+      acc
+      @ pop a0
+      @ call "printn_number"
+    | _ -> failwith "not implemented"
+    in ll_print scope rest acc
+
+let assembly_of_typed_program typed_program =
+  let instructions, _ = compile_program typed_program 0 [] in
+  String.concat String.empty instructions

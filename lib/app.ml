@@ -38,7 +38,7 @@ let compile text =
 let clear_on_failure = function
     | 0 -> ()
     | _ ->
-        Sys.command "rm program program.o stdlib.o program.s program.lang" |> ignore;
+        Sys.command "rm program program.o program.s" |> ignore;
         raise Generation_error
 
 ;;

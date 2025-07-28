@@ -99,7 +99,7 @@ let%expect_test "test3" =
          funcs = [] });
       ((Typed_Assignment ("d", (Type_Bool (Typed_value true)))),
        { vars =
-         [("b", TStr); ("a", TStr); ("c", TStr); ("d", TNull); ("e", TNull)];
+         [("a", TStr); ("b", TStr); ("c", TStr); ("d", TNull); ("e", TNull)];
          funcs = [] });
       ((Typed_Assignment ("e",
           (Type_Bool
@@ -107,7 +107,7 @@ let%expect_test "test3" =
                 (Type_Bool (Typed_value false)))))
           )),
        { vars =
-         [("c", TStr); ("a", TStr); ("b", TStr); ("d", TBool); ("e", TNull)];
+         [("a", TStr); ("b", TStr); ("c", TStr); ("d", TBool); ("e", TNull)];
          funcs = [] })
       ]
     |}];

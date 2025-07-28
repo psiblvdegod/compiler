@@ -6,7 +6,7 @@ var a b c;
 a := 1;
 b := 2;
 c := 3;
-print a b c;
+printn a b c;
 "
 
 let%expect_test "test1" =
@@ -25,7 +25,7 @@ var a b;
 a := 1;
 b := 2;
 a := a + b;
-print 1 b (a + b);
+printn 1 b (a + b);
 "
 
 let%expect_test "test2" =
@@ -40,7 +40,7 @@ let%expect_test "test2" =
 
 let test3 =
 "
-print (1 + 2 * 3) (-4) (-5 - (-6) - (-(-1)));
+printn (1 + 2 * 3) (-4) (-5 - (-6) - (-(-1)));
 "
 
 let%expect_test "test3" =
@@ -58,10 +58,12 @@ var left right;
 left := -7;
 right := 8;
 
-var current n acc sign;
+var current;
 current := left;
 
 while current < right do
+    
+    var n acc sign;
     n := current;
     acc := 1;
     sign := n < 0;
@@ -79,13 +81,29 @@ while current < right do
 
     current := current + 1;
 
-    print acc;
+    printn acc;
 done
 "
 
 let%expect_test "factorial" =
     App.run _factorial;
-    [%expect {| -120 |}]
+    [%expect {|
+      -5040
+      720
+      -120
+      24
+      -6
+      2
+      -1
+      1
+      1
+      2
+      6
+      24
+      120
+      720
+      5040
+      |}]
 
 ;;
 
@@ -101,7 +119,7 @@ while n > 1 do
   a := b - a;
   n := n - 1;
 
-  print b;
+  printn b;
 
 done
 "
@@ -116,5 +134,20 @@ let%expect_test "fibonacci" =
       8
       13
       |}]
+
+;;
+
+(* tests on Type_Str *)
+
+let print_str_test =
+"
+var a;
+a := \"12345678\";
+printn a;
+"
+
+let%expect_test "print_str_test" =
+    App.run print_str_test;
+    [%expect {| 12345678 |}]
 
 ;;

@@ -137,6 +137,43 @@ let%expect_test "fibonacci" =
 
 ;;
 
+let bool_test_1 =
+"
+var a;
+a := 0;
+printn \"xor :\";
+
+while a < 2 do
+    var b;
+    b := 0;
+
+    while b < 2 do
+      var xor;
+      xor := a + b;      
+
+      print \" a = \"   (a == 1) \"\t\";
+      print \" b = \"   (b == 1) \"\t\";
+      print \" xor = \" (xor == 1) \"\n\";
+
+      b := b + 1;
+    done
+    a := a + 1;
+done
+
+"
+
+let%expect_test "bool_test_1" =
+    App.run bool_test_1;
+    [%expect {|
+      xor :
+       a = false	 b = false	 xor = false
+       a = false	 b = true	 xor = true
+       a = true	 b = false	 xor = true
+       a = true	 b = true	 xor = false
+      |}]
+
+;;
+
 (* tests on Type_Str *)
 
 let print_str_test =

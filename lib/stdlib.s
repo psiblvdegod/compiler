@@ -10,10 +10,10 @@
 .endm
 
 .macro abs reg
-    bgez \reg, skip_if_positive
+    bgez \reg, skip0
     li t0, -1
     mul \reg, \reg, t0
-    skip_if_positive:
+    skip0:
 .endm
 
 .macro print_byte byte
@@ -32,14 +32,12 @@
 print_number:
     mv s0, a0
     li s1, 10       # base
-    li s2, 1        # cnt
+    li s2, 0        # len
     slti s3, s0, 0  # sign
-
-    push_byte '\n'
     
     abs s0
 
-    pn_loop:
+    print_loop:
         rem t0, s0, s1
         div s0, s0, s1
         addi t0, t0, '0'
@@ -47,13 +45,12 @@ print_number:
         sb t0, 0(sp)
         addi s2, s2, 1
 
-    bnez s0, pn_loop
+    bnez s0, print_loop
     
-    
-    beqz s3, skippp
+    beqz s3, skip1
     push_byte '-'
     addi s2, s2, 1
-    skippp:
+    skip1:
 
     li a0, 1
     mv a1, sp

@@ -53,26 +53,34 @@ let%expect_test "test3" =
 
 ;;
 
-
 let _factorial = "
-var n acc sign;
+var left right;
+left := -7;
+right := 8;
 
-n := -5;
-acc := 1;
-sign := n < 0;
+var current n acc sign;
+current := left;
 
-while n != 0 do
-    acc := acc * n;  
-    if
-      sign
-    then
-      n := n + 1;
-    else 
-      n := n - 1;
-    fi
+while current < right do
+    n := current;
+    acc := 1;
+    sign := n < 0;
+
+    while n != 0 do
+        acc := acc * n;  
+        if
+          sign
+        then
+          n := n + 1;
+        else 
+          n := n - 1;
+        fi
+    done
+
+    current := current + 1;
+
+    print acc;
 done
-
-print acc;
 "
 
 let%expect_test "factorial" =

@@ -129,6 +129,7 @@ let rec compile_program typed_program acc =
   | [] -> acc
   | (typed_statement, scope) :: rest ->
     match typed_statement with
+    (* TODO : wipe local variables from stack  *)
     | Typed_Declaration names ->
       let delta = -(List.length names) * alignment in
       let acc = acc

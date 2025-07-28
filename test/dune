@@ -1,6 +1,6 @@
 (library
- (name frontend_tests)
- (modules lexer parser)
+ (name compiler_tests)
+ (modules lexer parser inferencer generator)
  (libraries base stdio ppx_expect compiler)
  (preprocess
   (pps ppx_expect ppx_deriving.show))

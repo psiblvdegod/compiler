@@ -1,3 +1,6 @@
+exception Not_implemented
+exception Not_supported
+
 (* lexer *)
 
 type lexer_error =
@@ -152,7 +155,4 @@ and typed_program = (typed_statement * scope) list
 [@@deriving show { with_path = false }]
 
 (* generator *)
-
-type generator_error =
-| Not_implemented
-[@@deriving show { with_path = false }]
+exception Generation_error

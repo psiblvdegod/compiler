@@ -1,22 +1,5 @@
 open Types
 
-let rec find_var name = function
-    | [] -> Error Was_Not_declared
-    | head :: tail -> 
-        match head with
-        | (k, _) when k = name -> Ok (head)
-        | _ -> find_var name tail
-
-let rec replace_assoc ls key value acc =
-    match ls with
-    | [] -> raise Not_found
-    | (k, v) :: tail ->
-        if k = key then (List.rev acc) @ (key, value) :: tail
-        else replace_assoc tail key value ((k, v) :: acc)
-
-let replace_assoc ls k v = replace_assoc ls k v []
-
-(* Error if type is TNull*)
 let rec infer_expression scope = function
     | Int x  -> Ok (Type_Int(Typed_value x))
     | Bool x -> Ok (Type_Bool(Typed_value x))
@@ -74,6 +57,13 @@ and infer_unop unop typed_operand =
 
     | _ -> Error Operand_type_dismatch
 
+and find_var name = function
+    | [] -> Error Was_Not_declared
+    | head :: tail -> 
+        match head with
+        | (k, _) when k = name -> Ok (head)
+        | _ -> find_var name tail
+
 let init_scope = { vars = []; funcs = []; }
 
 let rec infer_program scope program acc =
@@ -102,7 +92,7 @@ let rec infer_program scope program acc =
             | Error err -> Error err
             | Ok (new_scope, typed_call) -> infer_program new_scope rest (typed_call :: acc))
     
-        | _ -> failwith "not implemented"
+        | _ -> raise Not_implemented
 
 and infer_declaration scope vars =
     if List.exists (fun var -> List.mem_assoc var scope.vars) vars
@@ -151,11 +141,11 @@ and infer_ite scope condition then_program else_program =
         | Ok typed_then_program -> 
         match infer_program scope else_program [] with
         | Error err -> Error err
-        | Ok typed_else_program -> Ok (scope, (Typed_Ite(typed_expr, typed_then_program, typed_else_program), scope)))
+        | Ok typed_else_program ->
+            Ok (scope, (Typed_Ite(typed_expr, typed_then_program, typed_else_program), scope)))
     | _ -> Error Expression_type_dismatch
 
 (* TODO : check if function was defined *)
-(* should not change scope so just returns old one *)
 and infer_call scope name args =
     let rec loop args acc = 
         match args with
@@ -168,5 +158,14 @@ and infer_call scope name args =
     match loop args [] with
     | Error err -> Error err
     | Ok typed_args -> Ok (scope, (Typed_Call(name, typed_args), scope))
+
+and replace_assoc ls key value = 
+    let rec loop ls acc =
+        match ls with
+        | [] -> raise Not_found
+        | (k, v) :: tail ->
+            if k = key then (List.rev acc) @ (key, value) :: tail
+            else loop tail ((k, v) :: acc) in
+    loop ls []
 
 let infer_types program = infer_program init_scope program []

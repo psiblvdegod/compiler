@@ -12,6 +12,14 @@ let find_var_index scope name =
       else loop tail (acc + 1) in
       loop (List.rev scope.vars) 0 
 
+let generate_label () =
+  let length = 16 in
+  let buffer = Bytes.create length in
+  for i = 0 to length - 1 do
+    let random_letter = Char.chr (Char.code 'a' + Random.int 26) in
+    Bytes.set buffer i random_letter done;
+  buffer |> Bytes.to_string
+
 let sp = "sp"
 let t1 = "t1"
 let t2 = "t2"
@@ -23,12 +31,24 @@ let add dest left right = [sprintf "add %s, %s, %s\n" dest left right]
 let sub dest left right = [sprintf "sub %s, %s, %s\n" dest left right]
 let mul dest left right = [sprintf "mul %s, %s, %s\n" dest left right]
 let div dest left right = [sprintf "div %s, %s, %s\n" dest left right]
+
+let slt dest left right = [sprintf "slt %s, %s, %s\n" dest left right]
+let sgt dest left right = [sprintf "slt %s, %s, %s\n" dest right left]
+let sle dest left right = [sprintf "slt %s, %s, %s\n" dest right left; sprintf "seqz %s, %s\n" dest dest]
+let sge dest left right = [sprintf "slt %s, %s, %s\n" dest left right; sprintf "seqz %s, %s\n" dest dest]
+let seq dest left right = [sprintf "xor %s, %s, %s\n" dest left right; sprintf "seqz %s, %s\n" dest dest]
+let sne dest left right = [sprintf "xor %s, %s, %s\n" dest left right; sprintf "snez %s, %s\n" dest dest]
+
 (*let mv dest src = [sprintf "mv %s, %s\n" dest src]*)
 let push reg = addi sp sp (-alignment) @ [sprintf "sw %s, (sp)\n" reg]
 let pop reg = [sprintf "lw %s, (sp)\n" reg] @ addi sp sp alignment
 let lw_from_stack reg delta = [sprintf "lw %s, %d(sp)\n" reg delta]
 let sw_to_stack reg delta = [sprintf "sw %s, %d(sp)\n" reg delta]
 let call f = [sprintf "call %s\n" f]
+let jump label = [sprintf "j %s\n" label]
+let branch_true reg label = ["li t0, 1\n"; sprintf "beq %s, t0, %s\n" reg label]
+let branch_false reg label = [sprintf "beqz %s, %s\n" reg label]
+
 let print_number = "print_number"
 
 let apply_binop = function
@@ -36,6 +56,13 @@ let apply_binop = function
   | Sub -> sub t1 t1 t2
   | Mul -> mul t1 t1 t2
   | Div -> div t1 t1 t2
+  
+  | Lt  -> slt t1 t1 t2
+  | Gt  -> sgt t1 t1 t2
+  | Eq  -> seq t1 t1 t2
+  | Leq -> sle t1 t1 t2
+  | Geq -> sge t1 t1 t2
+  | Neq -> sne t1 t1 t2
   | _ -> failwith "not implemented"
 
 let apply_unop = function
@@ -50,6 +77,13 @@ let rec compile_expression scope expression temps acc =
       @ push t1
       in acc
 
+    | Type_Bool (Typed_value n) ->
+      let acc = acc
+      @ li t1 (if n = true then 1 else 0)
+      @ push t1
+      in acc
+
+    | Type_Bool (Typed_var name)
     | Type_Int (Typed_var name) ->
       let pos = (find_var_index scope name + temps) * alignment in      
       let acc = acc
@@ -57,7 +91,8 @@ let rec compile_expression scope expression temps acc =
       @ push t1
       in acc
 
-    | Type_Int (Typed_unop (unop, typed_expr))->
+    | Type_Bool (Typed_unop (unop, typed_expr))
+    | Type_Int (Typed_unop (unop, typed_expr)) ->
       let acc = acc
       @ compile_expressions scope [typed_expr] temps
       @ lw_from_stack t1 0
@@ -65,6 +100,7 @@ let rec compile_expression scope expression temps acc =
       @ sw_to_stack t1 0
       in acc
     
+    | Type_Bool (Typed_binop (binop, typed_left, typed_right))
     | Type_Int (Typed_binop (binop, typed_left, typed_right)) ->
       let acc = acc
       @ compile_expressions scope [typed_left; typed_right] temps
@@ -82,10 +118,7 @@ and compile_expressions scope expressions position =
       | [] -> code_acc
       | expr :: rest ->
       let code_acc = compile_expression scope expr var_amount code_acc in
-      let code_acc = match expr with
-      | Type_Int _ | Type_Bool _ -> code_acc
-      | Type_Str _ -> failwith "not implemented"
-      in loop rest (var_amount + 1) code_acc in
+      loop rest (var_amount + 1) code_acc in
 
     loop expressions position []
 
@@ -107,6 +140,41 @@ let rec compile_program typed_program acc =
       @ compile_expressions scope [typed_expr]
       @ pop t1
       @ sw_to_stack t1 pos
+      in compile_program rest acc
+    
+    | Typed_While(condition, body_program) ->
+      let while_label = generate_label () in
+      let do_label = generate_label () in
+      let done_label = generate_label () in
+
+      let acc = acc
+      @ [while_label ^ ":\n"] 
+      @ compile_expressions scope [condition] 
+      @ pop t1
+      @ branch_true t1 do_label
+      @ branch_false t1 done_label
+      @ [do_label ^ ":\n"]
+      @ compile_program body_program []
+      @ jump while_label
+      @ [done_label ^ ":\n"]
+      in compile_program rest acc
+
+    | Typed_Ite(condition, then_program, else_program) ->
+      let then_label = generate_label () in
+      let else_label = generate_label () in
+      let fi_label = generate_label () in
+
+      let acc = acc
+      @ compile_expressions scope [condition] 
+      @ pop t1
+      @ branch_true t1 then_label
+      @ branch_false t1 else_label
+      @ [then_label ^ ":\n"]
+      @ compile_program then_program []
+      @ jump fi_label
+      @ [else_label ^ ":\n"]
+      @ compile_program else_program []
+      @ [fi_label ^ ":\n"]
       in compile_program rest acc
 
     | Typed_Call(name, args) ->

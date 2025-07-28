@@ -7,7 +7,6 @@ let rec split_by_token token left = function
 
 let split_by_token token token_list = split_by_token token [] token_list
 
-(* TODO : assert that priorities are correct *)
 let match_binop_lvl_4 = function
     | EQ  -> Some Eq
     | NEQ -> Some Neq

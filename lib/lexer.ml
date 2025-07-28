@@ -98,7 +98,7 @@ let try_tokenize_more state =
   | 'a'..'z' -> Some (token_of_id state state.pos)
   | _ -> None
 
-let try_tokenize_string_literal state =
+let try_tokenize_str_lit state =
   if state.len - state.pos < 2 then None else
   if state.str.[state.pos] <> '\"' then None else
   match String.index_from_opt state.str (state.pos + 1) '\"' with
@@ -115,7 +115,7 @@ let is_unsignificant state =
 let rec tokenize_loop state acc =
   if state.pos = state.len then Ok(acc) else
   if is_unsignificant state then tokenize_loop (addi_pos state 1) acc else
-  match try_tokenize_string_literal state with
+  match try_tokenize_str_lit state with
   | Some (Error err) -> Error err
   | Some (Ok (state, token)) -> tokenize_loop state (token :: acc)
   | None ->

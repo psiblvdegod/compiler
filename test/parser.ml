@@ -308,3 +308,30 @@ let%expect_test "call_stmt_correct 3" =
           ))
         ]
       |}]
+
+let _define_correct_1 =
+  "
+define fact n =>
+    var acc;
+    acc := 1;
+    while n != 0 do
+      acc := acc * n;
+      n := n - 1;
+    done
+end
+"
+
+let%expect_test "define_correct_1 2" =
+  pp_program _define_correct_1;
+  [%expect
+    {|
+    [(Definition ("fact", ["n"],
+        [(Declaration ["acc"]); (Assignment ("acc", (Int 1)));
+          (While ((BinOp (Neq, (Var "n"), (Int 0))),
+             [(Assignment ("acc", (BinOp (Mul, (Var "acc"), (Var "n")))));
+               (Assignment ("n", (BinOp (Sub, (Var "n"), (Int 1)))))]
+             ))
+          ]
+        ))
+      ]
+    |}]

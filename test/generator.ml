@@ -104,3 +104,17 @@ let%expect_test "fibonacci" =
       8
       13
       |}]
+
+let _xor =
+  "
+var a b;
+a := true;
+b := false;
+var xor;
+xor := (a or b) and !(a and b);
+print xor;
+"
+
+let%expect_test "xor" =
+  execute _xor;
+  [%expect {| true |}]

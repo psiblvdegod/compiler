@@ -5,7 +5,7 @@ open Compiler.Lexer
 open Compiler.Parser
 open Compiler.Inferencer
 
-let type_check str =
+let pp_annotated_ast str =
   match str |> tokenize with
   | Error err -> print_endline ("Error: " ^ show_lexer_error err)
   | Ok tokens -> (
@@ -17,14 +17,14 @@ let type_check str =
           | Ok typed_program -> print_endline (show_typed_program typed_program)
           ))
 
-let test1 = "
+let _declaration_test = "
 var a;
 var b;
 var c;
 "
 
-let%expect_test "test1" =
-  type_check test1;
+let%expect_test "declaration_test" =
+  pp_annotated_ast _declaration_test;
   [%expect
     {|
     [((Typed_Declaration ["a"]), { vars = []; funcs = [] });
@@ -34,7 +34,7 @@ let%expect_test "test1" =
       ]
     |}]
 
-let test2 = "
+let _assignment_test = "
 var a b c;
 
 a := \"zxc\";
@@ -43,8 +43,8 @@ b := a;
 
 "
 
-let%expect_test "test2" =
-  type_check test2;
+let%expect_test "assignment_test" =
+  pp_annotated_ast _assignment_test;
   [%expect
     {|
     [((Typed_Declaration ["a"; "b"; "c"]), { vars = []; funcs = [] });
@@ -55,7 +55,7 @@ let%expect_test "test2" =
       ]
     |}]
 
-let test3 =
+let _operations_test =
   "
 var a b c d e;
 
@@ -71,8 +71,8 @@ e := d or false;
 
 "
 
-let%expect_test "test3" =
-  type_check test3;
+let%expect_test "operations_test" =
+  pp_annotated_ast _operations_test;
   [%expect
     {|
     [((Typed_Declaration ["a"; "b"; "c"; "d"; "e"]), { vars = []; funcs = [] });
@@ -111,7 +111,7 @@ let%expect_test "test3" =
       ]
     |}]
 
-let while_test =
+let _while_test =
   "
 var a;
 a := true;
@@ -129,7 +129,7 @@ var c;
 "
 
 let%expect_test "while_test" =
-  type_check while_test;
+  pp_annotated_ast _while_test;
   [%expect
     {|
     [((Typed_Declaration ["a"]), { vars = []; funcs = [] });
@@ -147,7 +147,7 @@ let%expect_test "while_test" =
       ((Typed_Declaration ["c"]), { vars = [("a", TBool)]; funcs = [] })]
     |}]
 
-let ite_test =
+let _ite_test =
   "
 var a;
 
@@ -163,7 +163,7 @@ var d;
 "
 
 let%expect_test "ite_test" =
-  type_check ite_test;
+  pp_annotated_ast _ite_test;
   [%expect
     {|
     [((Typed_Declaration ["a"]), { vars = []; funcs = [] });

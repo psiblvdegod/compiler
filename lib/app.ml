@@ -60,9 +60,9 @@ let run input =
     match compile input with
     | Error msg -> (Sys.command @@ sprintf "echo %s" msg |> ignore;)
     | Ok code ->
-    (save_as code destination;
+    save_as code destination;
     Sys.command @@ sprintf "riscv64-unknown-elf-as %s -o program.o" destination |> clear_on_failure;
     Sys.command @@ sprintf "riscv64-unknown-elf-ld program.o -o program" |> clear_on_failure;
-    Sys.command @@ sprintf "%s program" emulator |> clear_on_failure;)
+    Sys.command @@ sprintf "%s program" emulator |> clear_on_failure;
 
 ;;

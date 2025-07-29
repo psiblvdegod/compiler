@@ -1,3 +1,5 @@
+(* psiblvdegod, 2025, under MIT License *)
+
 exception Not_implemented
 exception Not_supported
 

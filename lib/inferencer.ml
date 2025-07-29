@@ -1,3 +1,5 @@
+(* psiblvdegod, 2025, under MIT License *)
+
 open Types
 
 let rec infer_expression scope = function

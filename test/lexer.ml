@@ -1,3 +1,5 @@
+(* psiblvdegod, 2025, under MIT License *)
+
 open Compiler.Types
 open Compiler.Lexer
 

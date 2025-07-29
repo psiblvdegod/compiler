@@ -1,3 +1,5 @@
+(* psiblvdegod, 2025, under MIT License *)
+
 open Types
 
 let rec split_by_token token left = function

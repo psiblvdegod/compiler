@@ -1,4 +1,11 @@
+(* psiblvdegod, 2025, under MIT License *)
+
 open Compiler
+
+let execute input =
+  match App.compile input with
+  | Error msg -> print_endline msg
+  | Ok code -> App.run code
 
 let _print = "
 var a b;
@@ -8,7 +15,7 @@ printn a b (a + b);
 "
 
 let%expect_test "print" =
-  App.run _print;
+  execute _print;
   [%expect {|
     1
     2
@@ -49,7 +56,7 @@ done
 "
 
 let%expect_test "factorial" =
-  App.run _factorial;
+  execute _factorial;
   [%expect
     {|
       -5040
@@ -88,7 +95,7 @@ done
 "
 
 let%expect_test "fibonacci" =
-  App.run _fibonacci;
+  execute _fibonacci;
   [%expect {|
       1
       2

@@ -1,3 +1,5 @@
+(* psiblvdegod, 2025, under MIT License *)
+
 open Types
 open Lexer
 open Parser
@@ -51,15 +53,11 @@ let save_as text path =
   output_string oc text;
   close_out oc
 
-let run input =
+let run assembly =
   let destination = "program.s" in
-  match compile input with
-  | Error msg -> Sys.command @@ sprintf "echo %s" msg |> ignore
-  | Ok code ->
-      save_as code destination;
-      Sys.command
-      @@ sprintf "riscv64-unknown-elf-as %s -o program.o" destination
-      |> clear_on_failure;
-      Sys.command @@ sprintf "riscv64-unknown-elf-ld program.o -o program"
-      |> clear_on_failure;
-      Sys.command @@ sprintf "%s program" emulator |> clear_on_failure
+  save_as assembly destination;
+  Sys.command @@ sprintf "riscv64-unknown-elf-as %s -o program.o" destination
+  |> clear_on_failure;
+  Sys.command @@ sprintf "riscv64-unknown-elf-ld program.o -o program"
+  |> clear_on_failure;
+  Sys.command @@ sprintf "%s program" emulator |> clear_on_failure

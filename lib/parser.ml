@@ -47,7 +47,6 @@ let rec make_binop_parsing_priority_level binop_matcher next_level_parser tokens
                 | Ok (right, rest) ->
                     parse_binop (BinOp (binop, left, right)) rest))
       in
-
       parse_binop left tokens
 
 and parse_expr_lvl_4 tokens =
@@ -115,6 +114,11 @@ let rec parse_to_program acc = function
   | ELSE :: rest -> Ok (List.rev acc, ELSE :: rest)
   | FI :: rest -> Ok (List.rev acc, FI :: rest)
   | DONE :: rest -> Ok (List.rev acc, rest)
+  | END :: rest -> Ok (List.rev acc, rest)
+  | DEFINE :: ID name :: rest -> (
+      match parse_define name rest with
+      | Error err -> Error err
+      | Ok (definition, rest) -> parse_to_program (definition :: acc) rest)
   | _ -> Error Invalid_statement
 
 and parse_declaration acc = function
@@ -165,6 +169,23 @@ and parse_call name tokens acc =
       match parse_expr_lvl_1 tokens with
       | Error _ -> Ok (Call (name, List.rev acc), tokens)
       | Ok (expr, rest) -> parse_call name rest (expr :: acc))
+
+and parse_define name tokens =
+  let args_tokens, rest = split_by_token IMPLIES tokens in
+  let rec get_args tokens acc =
+    match tokens with
+    | [] -> Ok (List.rev acc)
+    | head :: rest -> (
+        match head with
+        | ID arg -> get_args rest (arg :: acc)
+        | _ -> Error Invalid_statement)
+  in
+  match get_args args_tokens [] with
+  | Error err -> Error err
+  | Ok args -> (
+      match parse_to_program [] rest with
+      | Error err -> Error err
+      | Ok (body, rest) -> Ok (Definition (name, args, body), rest))
 
 let parse_expression tokens =
   match parse_expression tokens with

@@ -15,6 +15,8 @@ let token_of_reserved = function
   | "or" -> Some OR
   | "true" -> Some TRUE
   | "false" -> Some FALSE
+  | "define" -> Some DEFINE
+  | "end" -> Some END
   | _ -> None
 
 let token_of_two_chars = function
@@ -23,6 +25,7 @@ let token_of_two_chars = function
   | '!', '=' -> Some NEQ
   | '=', '=' -> Some EQ
   | ':', '=' -> Some COLONEQQ
+  | '=', '>' -> Some IMPLIES
   | _ -> None
 
 let token_of_char = function

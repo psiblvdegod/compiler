@@ -95,12 +95,17 @@ let rec infer_program scope program acc =
         | _ -> raise Not_implemented
 
 and infer_declaration scope vars =
-    if List.exists (fun var -> List.mem_assoc var scope.vars) vars
-    then Error Already_declared (* TODO: show which exactly variable was declared *)
-    else
-        let typed_vars = List.map (fun var -> var, TNull) vars in
-        let new_scope = { vars = scope.vars @ typed_vars; funcs = scope.funcs } in
-        Ok (new_scope, (Typed_Declaration vars, scope))
+    let has_no_duplicates ls = 
+        let rec loop = function
+        | [] | [_] -> true
+        | a :: (b :: rest) ->
+            if a = b then false else loop (b :: rest) in
+        loop (List.sort (Stdlib.compare) ls) in
+
+    if has_no_duplicates vars = false then Error Already_declared else
+    let typed_vars = List.map (fun var -> var, TNull) vars in
+    let new_scope = { vars = scope.vars @ typed_vars; funcs = scope.funcs } in
+    Ok (new_scope, (Typed_Declaration vars, scope))
 
 and infer_assignment scope name expr =
     match infer_expression scope expr with

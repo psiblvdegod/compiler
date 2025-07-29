@@ -3,14 +3,230 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T2A]{fontenc}
 \usepackage[russian]{babel}
+\usepackage{listings}
+\usepackage{xcolor}
+
+
+
+\lstset{
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue},
+	commentstyle=\color{gray},
+	stringstyle=\color{orange},
+	backgroundcolor=\color{white},
+	frame=single,
+	rulecolor=\color{black},
+	tabsize=2,
+	showstringspaces=false,
+	breaklines=true,
+	breakatwhitespace=true,
+	captionpos=b,
+	frame=none,
+	numbers=none,
+}
 
 \title{Название}
 \author{Автор}
+
 \begin{document}
+	
 	\begin{frame}[plain]
 		\maketitle
 	\end{frame}
+	
 	\begin{frame}
-		\frametitle{Frame Title}
+	\frametitle{Язык и платформа}
+	\begin{itemize}
+			\item Язык — OCaml
+			\item Хостинг кода — GitHub
+			\item CI/CD — GitHub Actions
+		\end{itemize}
 	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Цель}
+		Создание AOT-компилятора вымышленного императивного языка, способного компилировать относительно несложные программы 
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Задачи}
+		
+		\begin{itemize}
+			\item Изучение процесса компиляции в современных ЯП
+			\item ???Выбор языка и подготовка окружения
+			\item Реализация фронтенда
+			\begin{itemize}
+				\item Лексический анализ
+				\item Синтаксический анализ
+				\item Семантический анализ
+			\end{itemize}
+			\item Реализация бекенда
+			\begin{itemize}
+				\item Порождение RISC-V Assembly
+			\end{itemize}
+			\item Рефакторинг кода и оформление репозитория
+		\end{itemize}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{О процессе компиляции}
+		
+			\begin{itemize}
+			\item Каждый этап обрабатывается отдельным модулем
+			\item Модуль принимает некоторое представление программы и возвращает новое представление, снабженное дополнительной информацией
+			\item ???Компиляция представляет собой процесс последовательной передачи результатов вычислений предыдущего модуля в следующий модуль
+			\end{itemize}
+
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Лексический анализ}
+			Задачи:
+			\begin{itemize}
+				\item Преобразовать строку в последовательность токенов
+				\item Выявить лексические ошибки
+			\end{itemize}
+			Сигнатура функции:
+
+			\begin{lstlisting}[language=ML] 
+val tokenize :
+		string -> (token list, lexer_error) result
+		\end{lstlisting}
+
+			В качестве токенов могут выступать:
+			\begin{itemize}
+				\item Ключевые слова:
+				\begin{itemize}
+					\item \lstinline[language=ML]|while, do, done, if, then, else, fi ...|
+				\end{itemize}
+				\item Литералы:
+				\begin{itemize}
+					\item \lstinline[language=ML]|Int 42, true, false, String "hello world"|
+				\end{itemize}
+				\item Унарные и бинарные операторы и скобки
+				\item Идентификаторы переменных и функций
+			\end{itemize}
+	\end{frame}
+	
+	\begin{frame}[fragile]
+		\frametitle{Синтаксический анализ}
+		Задачи:
+		\begin{itemize}
+			\item Преобразовать последовательность токенов в AST
+			\item Выявить синтаксические ошибки
+		\end{itemize}
+		Сигнатура функции:	
+		\begin{lstlisting}[language=ML] 
+val parse_to_program :
+		token list -> (program, parser_error) result
+		\end{lstlisting}
+		\end{frame}
+	
+	\begin{frame}[fragile]
+		
+		Что из себя представляет AST:
+		\begin{lstlisting}[language=ML] 
+type program = statement list
+
+type statement =
+| Assignment of string * expression
+| While of expression * program
+| Ite of expression * program * program
+| ...
+
+type expression =
+| Var of string
+| Int of int
+| BinOp of operation * expression * expression
+| ...
+		\end{lstlisting}
+	\end{frame}
+	
+		\begin{frame}[fragile]
+		\frametitle{Семантический анализ}
+		Задачи:
+		\begin{itemize}
+			\item Дополнить AST информацией о типах и областях видимости
+			\item Выявить семантические ошибки
+		\end{itemize}
+				
+		Сигнатура функции:	
+		\begin{lstlisting}[language=ML] 
+val infer_types :
+		token list -> (program, parser_error) result
+		\end{lstlisting}
+		
+		Поддерживаемые на данный момент типы:
+		\begin{itemize}
+			\item Int32
+			\item Bool
+			\item ASCIIZ String
+		\end{itemize}
+
+		\end{frame}
+	\begin{frame}[fragile]
+		Как выглядит расширенное AST:
+
+\begin{lstlisting}[language=ML] 
+type typed_program = (typed_statement * scope) list
+
+type typed_statement =
+| Typed_Assignment of string * typed_expression
+| Typed_While of typed_expression * typed_program
+| Typed_Ite of typed_expression * typed_program * typed_program
+| ...
+
+type typed_expression =
+| Type_Int of ...
+| Type_Bool of ...
+| Type_Str of ...
+
+\end{lstlisting}
+
+		\end{frame}
+
+\begin{frame}
+	\frametitle{Порождение кода}
+	Полученное ранее представление программы является универсальным для любой платформы для которой существует компилятор OCaml подходящей версии.
+	\\
+	Порождение кода реализовано для riscv64.
+	
+\end{frame}
+
+
+\begin{frame}
+	\frametitle{???}
+	\begin{itemize}
+		\item Ассемблирование
+		\begin{itemize}
+			\item Например с помощью \lstinline[language=ML]|riscv64-unknown-elf-as|
+			\item Результат — объектный модуль
+		\end{itemize}
+		\item Линковка
+			\begin{itemize}
+				\item Например с помощью \lstinline[language=ML]|riscv64-unknown-elf-ld|
+				\item Результат — исполняемый файл
+			\end{itemize}
+		\item Исполнение
+		\begin{itemize}
+			\item Или нативно, если архитектура соответствующая
+			\item Или помощью эмулятора, например \lstinline[language=ML]|qemu|
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Использовавшиеся инструменты}
+		\begin{itemize}
+			\item \lstinline[language=ML]|ppx_expect| и \lstinline[language=ML]|ppx_deriving|
+			\begin{itemize}
+				\item Специфичные для OCaml фреймворки значительно упрощающие тестирование и отладку
+			\end{itemize}
+			
+			\item \lstinline[language=ML]|riscv64-unknown-elf-as| и \lstinline[language=ML]|riscv64-unknown-elf-ld|
+			\item \lstinline[language=ML]|qemu-riscv64| и \lstinline[language=ML]|spike|
+			
+		\end{itemize}
+\end{frame}
+
 \end{document}

@@ -24,8 +24,8 @@
 	numbers=none,
 }
 
-\title{Название}
-\author{Автор}
+\title{Учебный компилятор}
+\author[Балышев А.М.]{Автор: Балышев А.М.\\ Руководитель: Косарев Д.С.}
 
 \begin{document}
 	
@@ -43,45 +43,24 @@
 	\end{frame}
 	
 	\begin{frame}
-		\frametitle{Актуальность}
-		\begin{itemize}
-			\item TODO
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{Цель}
+		\frametitle{Цель и задачи}
+		Цель:
+		\\
 		Создание AOT-компилятора вымышленного императивного языка, способного компилировать относительно несложные программы 
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{Задачи}
+		
+		Задачи:\\
 		\begin{itemize}
-			\item Изучение процесса компиляции в современных ЯП
-			\item Подготовка окружения
 			\item Реализация фронтенда
 			\begin{itemize}
-				\item Лексический анализ
-				\item Синтаксический анализ
-				\item Семантический анализ
+				\item Лексический разбор
+				\item Синтаксический разбор
+				\item Семантический разбор
 			\end{itemize}
 			\item Реализация бекенда
 			\begin{itemize}
 				\item Порождение RISC-V Assembly
 			\end{itemize}
 			\item Рефакторинг кода и оформление репозитория
-		\end{itemize}
-	\end{frame}
-	
-	\begin{frame}
-		\frametitle{Обзор аналогов}
-		Clang:
-		\begin{itemize}
-			\item TODO??
-		\end{itemize}
-		GCC:
-		\begin{itemize}
-			\item TODO??
 		\end{itemize}
 		
 	\end{frame}
@@ -104,18 +83,15 @@
 	
 	\begin{frame}
 		\frametitle{О процессе компиляции}
-		
 			\begin{itemize}
-			\item Каждый этап обрабатывается отдельным модулем
-			\item Модуль принимает некоторое представление программы и возвращает новое представление, снабженное дополнительной информацией
-			\item Компиляция представляет собой процесс последовательной передачи результатов вычислений предыдущего модуля в следующий модуль
+			\item Каждый этап обрабатывается отдельной функцией
+			\item Функция принимает некоторое представление программы и возвращает новое представление, снабженное дополнительной информацией
+			\item Компиляция представляет собой последовательную передачу результатов вычислений предыдущей функции в следующую функцию
 			\end{itemize}
-
 	\end{frame}
-	
 
 	\begin{frame}[fragile]
-		\frametitle{Лексический анализ}
+		\frametitle{Лексический разбор}
 			Задачи:
 			\begin{itemize}
 				\item Преобразовать строку в последовательность токенов
@@ -143,7 +119,7 @@
 	\end{frame}
 	
 	\begin{frame}[fragile]
-		\frametitle{Синтаксический анализ}
+		\frametitle{Синтаксический разбор}
 		Задачи:
 		\begin{itemize}
 			\item Преобразовать последовательность токенов в AST
@@ -180,7 +156,7 @@ type expression =
 	\end{frame}
 	
 		\begin{frame}[fragile]
-		\frametitle{Семантический анализ}
+		\frametitle{Семантический разбор}
 		Задачи:
 		\begin{itemize}
 			\item Дополнить AST информацией о типах и областях видимости
@@ -193,7 +169,7 @@ type expression =
 		
 		Поддерживаемые на данный момент типы:
 		\begin{itemize}
-			\item Int32
+			\item Int
 			\item Bool
 			\item ASCIIZ String
 		\end{itemize}
@@ -229,32 +205,64 @@ type typed_expression =
 	val generate_assembly : annotated_ast -> string
 	\end{lstlisting}
 	
-	\begin{itemize}
-		\item AST универсально для любой платформы для которой существует компилятор OCaml подходящей версии
-		\item Порождение кода реализовано только для riscv64
-	\end{itemize}
+	Порождение кода реализовано только для riscv64
 \end{frame}
 
-
 \begin{frame}
-	\frametitle{???}
-	Результат работы компилятора — код на языке Ассемблера
-	Дальнейшие этапы:
+	\frametitle{Дальнейшие этапы}
 	\begin{itemize}
 		\item Ассемблирование
 		\begin{itemize}
-			\item Например с помощью \lstinline[language=ML]|riscv64-unknown-elf-as|
+			\item Например, с помощью \lstinline[language=Python]|riscv64-unknown-elf-as|
 			\item Результат — объектный модуль
 		\end{itemize}
 		\item Линковка
 			\begin{itemize}
-				\item Например с помощью \lstinline[language=ML]|riscv64-unknown-elf-ld|
+				\item Например, с помощью \lstinline[language=Python]|riscv64-unknown-elf-ld|
 				\item Результат — исполняемый файл
 			\end{itemize}
 		\item Исполнение
 		\begin{itemize}
-			\item Или нативно, если архитектура соответствующая
-			\item Или помощью эмулятора, например \lstinline[language=ML]|qemu|
+			\item Нативно, если архитектура соответствующая
+			\item С помощью эмулятора, например \lstinline[language=Python]|qemu|
+		\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+	\frametitle{Пример}
+	\begin{itemize}
+		\begin{lstlisting}[language=PASCAL]
+var left right;
+left := -7; right := 8;
+while left < right do
+		var n acc sign;
+		n := left;
+		acc := 1;
+		sign := n < 0;
+		while n != 0 do
+				acc := acc * n;  
+				if sign then n := n + 1;
+				else  n := n - 1;
+				fi
+		done
+		left := left + 1;
+		printn acc;
+done
+		\end{lstlisting}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{О проблемах и решениях}
+	\begin{itemize}
+		\item При выделении места на стеке для локальных переменных при выходе из области видимости нужно восстановить \lstinline[language=Python]|sp|
+		\begin{itemize}		
+			\item Можно хранить текущее количество переменных
+		\end{itemize}
+		\item Метки для условных/безусловных переходов не должны повторяться
+		\begin{itemize}		
+			\item Можно генерировать их случайно
 		\end{itemize}
 	\end{itemize}
 \end{frame}
@@ -262,21 +270,13 @@ type typed_expression =
 \begin{frame}
 	\frametitle{Использовавшиеся инструменты}
 		\begin{itemize}
-			\item \lstinline[language=ML]|ppx_expect|,  \lstinline[language=ML]|ppx_deriving|
+			\item \lstinline[language=Python]|ppx_expect|,  \lstinline[language=Python]|ppx_deriving|
 			\begin{itemize}
 				\item Специфичные для OCaml фреймворки значительно упрощающие тестирование и отладку
 			\end{itemize}
 			
-			\item \lstinline[language=ML]|riscv64-unknown-elf-as|,  \lstinline[language=ML]|riscv64-unknown-elf-ld|
-			\item \lstinline[language=ML]|qemu-riscv64|, \lstinline[language=ML]|spike|
+			\item \lstinline[language=Python]|riscv64-unknown-elf-as|,  \lstinline[language=Python]|riscv64-unknown-elf-ld|
+			\item \lstinline[language=Python]|qemu-riscv64|, \lstinline[language=Python]|spike|
 		\end{itemize}
-\end{frame}
-	\begin{frame}
-	\frametitle{Перспективы развития}
-	\begin{itemize}
-		\item Добавление препроцессинга
-		\item Добавление оптимизаций
-		\item Расширение системы типов
-	\end{itemize}
 \end{frame}
 \end{document}

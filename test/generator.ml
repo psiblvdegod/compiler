@@ -138,3 +138,41 @@ let%expect_test "xor" =
       |}]
 
 ;;
+
+
+
+(* declaration *)
+
+let declaration_error =
+"
+var a a;
+"
+
+let%expect_test "declaration_should_fail" =
+  App.run declaration_error;
+  [%expect {| Error: Already_declared |}];
+
+;;
+
+let declaration_fixed_scope_bug =
+"
+var a;
+a := 1;
+printn a;
+if a == 1 then
+    var a;
+    a := 2;
+    printn a;
+fi
+printn a;
+"
+
+let%expect_test "declaration_fixed_scope_bug" =
+  App.run declaration_fixed_scope_bug;
+  [%expect {|
+    1
+    2
+    1
+    |}];
+
+;;

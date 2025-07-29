@@ -1,7 +1,6 @@
 open Compiler
 
-let _print =
-"
+let _print = "
 var a b;
 a := 1;
 b := 2;
@@ -14,11 +13,10 @@ let%expect_test "print" =
     1
     2
     3
-    |}];
+    |}]
 
-;;
-
-let _factorial = "
+let _factorial =
+  "
 var left right;
 left := -7;
 right := 8;
@@ -51,8 +49,9 @@ done
 "
 
 let%expect_test "factorial" =
-    App.run _factorial;
-    [%expect {|
+  App.run _factorial;
+  [%expect
+    {|
       -5040
       720
       -120
@@ -70,9 +69,8 @@ let%expect_test "factorial" =
       5040
       |}]
 
-;;
-
-let _fibonacci = "
+let _fibonacci =
+  "
 var a b n;
 
 n := 7;
@@ -90,8 +88,8 @@ done
 "
 
 let%expect_test "fibonacci" =
-    App.run _fibonacci;
-    [%expect {|
+  App.run _fibonacci;
+  [%expect {|
       1
       2
       3
@@ -99,6 +97,3 @@ let%expect_test "fibonacci" =
       8
       13
       |}]
-
-;;
-

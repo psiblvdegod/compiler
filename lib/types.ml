@@ -3,87 +3,68 @@ exception Not_supported
 
 (* lexer *)
 
-type lexer_error =
-| Invalid_token
-| Input_is_empty
+type lexer_error = Invalid_token | Input_is_empty
 [@@deriving show { with_path = false }]
 
 type token =
-| STR of string
-| INT of int
-| TRUE
-| FALSE
-
-| ID of string
-
-| VAR
-| COLONEQQ
-
-| WHILE
-| DO
-| DONE
-
-| IF
-| THEN
-| ELSE
-| FI
-
-| PLUS
-| MINUS
-| STAR
-| SLASH
-| AND
-| OR
-| CARET
-| TILDE
-| BANG
-
-| EQ
-| NEQ
-| LEQ
-| GEQ
-| LT
-| GT
-
-| LP
-| RP
-| SEMI
+  | STR of string
+  | INT of int
+  | TRUE
+  | FALSE
+  | ID of string
+  | VAR
+  | COLONEQQ
+  | WHILE
+  | DO
+  | DONE
+  | IF
+  | THEN
+  | ELSE
+  | FI
+  | PLUS
+  | MINUS
+  | STAR
+  | SLASH
+  | AND
+  | OR
+  | CARET
+  | TILDE
+  | BANG
+  | EQ
+  | NEQ
+  | LEQ
+  | GEQ
+  | LT
+  | GT
+  | LP
+  | RP
+  | SEMI
 [@@deriving show { with_path = false }]
 
 (* parser *)
 
-type parser_error =
-  | Invalid_expression
-  | Invalid_statement
+type parser_error = Invalid_expression | Invalid_statement
 [@@deriving show { with_path = false }]
 
 type expression =
   | Var of string
-
   | Int of int
   | Bool of bool
   | Str of string
-
   | BinOp of binary_operation * expression * expression
   | UnOp of unary_operation * expression
 [@@deriving show { with_path = false }]
 
-and unary_operation =
-  | Neg
-  | Rev
-  | Not
-[@@deriving show { with_path = false }]
+and unary_operation = Neg | Rev | Not [@@deriving show { with_path = false }]
 
 and binary_operation =
   | Mul
   | Div
-
   | Add
   | Sub
   | Cat
   | And
   | Or
-
   | Eq
   | Neq
   | Leq
@@ -94,38 +75,34 @@ and binary_operation =
 
 and statement =
   | Declaration of string list
-
   | Assignment of string * expression
   | While of expression * program
   | Ite of expression * program * program
-
   | Definition of string * string list * program
   | Call of string * expression list
 [@@deriving show { with_path = false }]
 
-and program = statement list
-[@@deriving show { with_path = false }]
+and program = statement list [@@deriving show { with_path = false }]
 
 (* inferencer *)
 
 type inferencer_error =
-    | Already_declared
-    | Was_Not_declared
-    | Was_Not_defined
-    | Was_Not_assigned
-    | Operand_type_dismatch
-    | Expression_type_dismatch
-    | Function_type_dismatch
-    | Already_specified
+  | Already_declared
+  | Was_Not_declared
+  | Was_Not_defined
+  | Was_Not_assigned
+  | Operand_type_dismatch
+  | Expression_type_dismatch
+  | Function_type_dismatch
+  | Already_specified
 [@@deriving show { with_path = false }]
 
-type expression_type = | TInt | TBool | TStr | TNull
+type expression_type = TInt | TBool | TStr | TNull
 [@@deriving show { with_path = false }]
 
-and scope = 
-{
-    vars : (string * expression_type) list;
-    funcs: (string * expression_type * (expression_type list)) list;
+and scope = {
+  vars : (string * expression_type) list;
+  funcs : (string * expression_type * expression_type list) list;
 }
 [@@deriving show { with_path = false }]
 
@@ -142,11 +119,9 @@ and 'a base_typed_expr =
 
 and typed_statement =
   | Typed_Declaration of string list
-
   | Typed_Assignment of string * typed_expression
   | Typed_While of typed_expression * typed_program
   | Typed_Ite of typed_expression * typed_program * typed_program
-
   | Typed_Definition of string * string list * typed_program
   | Typed_Call of string * typed_expression list
 [@@deriving show { with_path = false }]

@@ -27,6 +27,7 @@ module Reg = struct
   let a6 = "a6"
   let a7 = "a7"
   let zero = "x0"
+  let ra = "ra"
 end
 
 module Instr = struct

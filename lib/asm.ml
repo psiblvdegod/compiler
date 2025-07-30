@@ -23,6 +23,9 @@ module Reg = struct
   let s0 = "s0"
   let s1 = "s1"
   let s2 = "s2"
+  let s3 = "s3"
+  let s4 = "s4"
+  let s5 = "s5"
   let a0 = "a0"
   let a1 = "a1"
   let a2 = "a2"
@@ -74,6 +77,8 @@ module Instr = struct
       sprintf "snez %s, %s\n" dest dest;
     ]
 
+  let beqz reg label = [ sprintf "beqz %s, %s\n" reg label]
+
   let lw_from_stack reg delta = [ sprintf "lw %s, %d(sp)\n" reg delta ]
   let ld_from_stack reg delta = [ sprintf "ld %s, %d(sp)\n" reg delta ]
   let sw_to_stack reg delta = [ sprintf "sw %s, %d(sp)\n" reg delta ]
@@ -96,7 +101,8 @@ module Str = struct
   open Instr
 
   let rec create_asciz str = []
-    @ sbrk (String.length str + 1)
+    @ li a0 (String.length str + 1)
+    @ sbrk ()
     @ store_str a0 (str ^ "\x00")
 
   and store_str dest str =
@@ -123,15 +129,32 @@ module Str = struct
     @ jump loop_label
     @ [ end_loop_label ^ ":\n" ]
 
-  and sbrk len = []
+  and sbrk () = []
+    @ mv a1 a0
+    @ li a0 0  
     @ li a7 214
-    @ li a0 0
     @ ecall
     @ mv s0 a0
     @ li a7 214
-    @ addi a0 s0 len
+    @ add a0 s0 a1
     @ ecall
     @ mv a0 s0
+
+    and copy_bytes src dest len =
+      let loop_label = generate_label () in
+      let end_label = generate_label () in []
+      @ mv t1 src
+      @ mv t2 dest
+      @ mv t3 len
+      @ [ loop_label ^ ":\n" ]
+      @ beqz t3 end_label
+      @ lb t0 t1
+      @ sb t0 t2
+      @ addi t1 t1 1
+      @ addi t2 t2 1
+      @ addi t3 t3 (-1)
+      @ jump loop_label
+      @ [ end_label ^ ":\n" ]
 end
 
 module Print = struct

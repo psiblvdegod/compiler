@@ -1,5 +1,7 @@
 (* psiblvdegod, 2025, under MIT License *)
 
+[@@@ocamlformat "disable"]
+
 open Types
 open Asm
 open Asm.Reg
@@ -10,60 +12,75 @@ open Asm.Print
 let rec compile_expression scope expression temps acc =
   match expression with
   | Type_Int (Typed_value n) ->
-      let acc = acc @ li t1 n @ addi sp sp (-alignment) @ sw_to_stack t1 0 in
+      let acc = acc
+      @ li t1 n
+      @ addi sp sp (-alignment)
+      @ sw_to_stack t1 0 in
       acc
   | Type_Bool (Typed_value n) ->
-      let acc =
-        acc
+      let acc = acc
         @ li t1 (if n = true then 1 else 0)
-        @ addi sp sp (-alignment) @ sw_to_stack t1 0
+        @ addi sp sp (-alignment)
+        @ sw_to_stack t1 0
       in
       acc
   | Type_Str (Typed_value s) ->
-      let acc =
-        acc @ create_asciz s @ addi sp sp (-alignment) @ [ "sd a0, (sp)\n" ]
+      let acc = acc
+        @ create_asciz s
+        @ addi sp sp (-alignment)
+        @ sd_to_stack a0 0
       in
       acc
   | Type_Str (Typed_var name) ->
       let pos = (find_var_index scope name + temps) * alignment in
-      let acc = acc @ ld_from_stack t1 pos @ sd_to_stack t1 0 in
+      let acc = acc
+      @ ld_from_stack t1 pos
+      @ sd_to_stack t1 0 in
       acc
   | Type_Str (Typed_unop (unop, typed_expr)) ->
-      let acc =
-        acc
+      let acc = acc
         @ compile_expressions scope [ typed_expr ] temps
-        @ ld_from_stack t1 0 @ apply_unop unop @ sd_to_stack t1 0
+        @ ld_from_stack t1 0
+        @ apply_unop unop
+        @ sd_to_stack t1 0
       in
       acc
   | Type_Str (Typed_binop (binop, typed_left, typed_right)) ->
-      let acc =
-        acc
+      let acc = acc
         @ compile_expressions scope [ typed_left; typed_right ] temps
-        @ ld_from_stack t1 alignment @ ld_from_stack t2 0 @ apply_binop binop
-        @ addi sp sp alignment @ sd_to_stack t1 0
+        @ ld_from_stack t1 alignment
+        @ ld_from_stack t2 0
+        @ apply_binop binop
+        @ addi sp sp alignment
+        @ sd_to_stack t1 0
       in
       acc
   | Type_Bool (Typed_var name) | Type_Int (Typed_var name) ->
       let pos = (find_var_index scope name + temps) * alignment in
-      let acc =
-        acc @ lw_from_stack t1 pos @ addi sp sp (-alignment) @ sw_to_stack t1 0
+      let acc = acc
+        @ lw_from_stack t1 pos
+        @ addi sp sp (-alignment)
+        @ sw_to_stack t1 0
       in
       acc
   | Type_Bool (Typed_unop (unop, typed_expr))
   | Type_Int (Typed_unop (unop, typed_expr)) ->
-      let acc =
-        acc
+      let acc = acc
         @ compile_expressions scope [ typed_expr ] temps
-        @ lw_from_stack t1 0 @ apply_unop unop @ sw_to_stack t1 0
+        @ lw_from_stack t1 0
+        @ apply_unop unop
+        @ sw_to_stack t1 0
       in
       acc
   | Type_Bool (Typed_binop (binop, typed_left, typed_right))
   | Type_Int (Typed_binop (binop, typed_left, typed_right)) ->
-      let acc =
-        acc
+      let acc = acc
         @ compile_expressions scope [ typed_left; typed_right ] temps
-        @ lw_from_stack t1 alignment @ lw_from_stack t2 0 @ apply_binop binop
-        @ addi sp sp alignment @ sw_to_stack t1 0
+        @ lw_from_stack t1 alignment
+        @ lw_from_stack t2 0
+        @ apply_binop binop
+        @ addi sp sp alignment
+        @ sw_to_stack t1 0
       in
       acc
 
@@ -168,21 +185,27 @@ let rec compile_program typed_program local_cnt acc =
           let acc =
             acc
             @ compile_expressions scope [ condition ]
-            @ lw_from_stack t1 0 @ addi sp sp alignment
-            @ branch_true t1 then_label @ branch_false t1 else_label
+            @ lw_from_stack t1 0
+            @ addi sp sp alignment
+            @ branch_true t1 then_label
+            @ branch_false t1 else_label
             @ [ then_label ^ ":\n" ]
-            @ compiled_then @ wipe_locals_then @ jump fi_label
+            @ compiled_then @ wipe_locals_then
+            @ jump fi_label
             @ [ else_label ^ ":\n" ]
             @ compiled_else @ wipe_locals_else
             @ [ fi_label ^ ":\n" ]
           in
           compile_program rest local_cnt acc
       | Typed_Call (name, args) ->
-          let acc = acc @ compile_call scope name args in
+          let acc = acc
+            @ compile_call scope name args in
           compile_program rest local_cnt acc
       | Typed_Definition (name, typed_args, typed_program) ->
           let end_label = generate_label () in
-          let acc = acc @ jump end_label @ [ name ^ ":\n" ] in
+          let acc = acc
+            @ jump end_label
+            @ [ name ^ ":\n" ] in
           let acc, local_cnt' =
             compile_program typed_program
               (local_cnt + List.length typed_args)
@@ -215,7 +238,7 @@ and print scope exprs acc =
         match expr with
         | Type_Bool _ -> acc @ print_bool a0
         | Type_Int _ -> acc @ print_number a0
-        | Type_Str _ -> acc @ mv s1 a0 @ str_len_asciz @ print_bytes_from s1 a0
+        | Type_Str _ -> acc @ mv s1 a0 @ str_len_asciz () @ print_bytes_from s1 a0
       in
       print scope rest acc
 

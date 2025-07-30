@@ -253,3 +253,25 @@ let%expect_test "definition_factorial" =
         funcs = [("fact", [("acc", TInt); ("n", TInt)])] })
       ]
     |}]
+
+let _definition =
+  "
+define helloworld =>
+  print \"hello world!!!\";
+end
+
+helloworld;
+"
+
+let%expect_test "_definition" =
+  pp_annotated_ast _definition;
+  [%expect {|
+    [((Typed_Definition ("helloworld", [],
+         [((Typed_Call ("print", [(Type_Str (Typed_value "hello world!!!"))])),
+           { vars = []; funcs = [("helloworld", [])] })]
+         )),
+      { vars = []; funcs = [("helloworld", [])] });
+      ((Typed_Call ("helloworld", [])),
+       { vars = []; funcs = [("helloworld", [])] })
+      ]
+    |}]

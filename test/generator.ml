@@ -118,3 +118,16 @@ print xor;
 let%expect_test "xor" =
   execute _xor;
   [%expect {| true |}]
+
+let _definition =
+  "
+define helloworld =>
+  print \"hello world!!!\";
+end
+
+helloworld;
+"
+
+let%expect_test "_definition" =
+  execute _definition;
+  [%expect {| hello world!!! |}]

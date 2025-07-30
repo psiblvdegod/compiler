@@ -44,9 +44,7 @@ let clear_on_failure = function
 let emulator =
   match Sys.getenv_opt "EMULATOR" with
   | Some value -> value
-  | None ->
-      failwith "export EMULATOR\n"
-      ^ "\"spike pk\" or \"qemu-riscv64\" or something else"
+  | None -> "qemu-riscv64"
 
 let save_as text path =
   let oc = open_out path in

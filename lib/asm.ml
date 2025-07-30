@@ -20,6 +20,7 @@ module Reg = struct
   let t2 = "t2"
   let t3 = "t3"
   let t4 = "t4"
+  let s0 = "s0"
   let s1 = "s1"
   let s2 = "s2"
   let a0 = "a0"
@@ -95,7 +96,7 @@ module Str = struct
   open Instr
 
   let rec create_asciz str = []
-    @ mmap_page ()
+    @ sbrk (String.length str + 1)
     @ store_str a0 (str ^ "\x00")
 
   and store_str dest str =
@@ -108,7 +109,7 @@ module Str = struct
     let init = mv t1 dest in
     List.fold_left (fun acc ch -> acc @ add ch) init ls
 
-  and str_len_asciz =
+  and str_len_asciz () =
     let loop_label = generate_label () in
     let end_loop_label = generate_label () in []
     @ mv a1 a0
@@ -122,15 +123,15 @@ module Str = struct
     @ jump loop_label
     @ [ end_loop_label ^ ":\n" ]
 
-  and mmap_page () = []
+  and sbrk len = []
+    @ li a7 214
     @ li a0 0
-    @ li a1 4096
-    @ li a2 0x3
-    @ li a3 0x22
-    @ li a4 (-1)
-    @ li a5 0
-    @ li a7 222
     @ ecall
+    @ mv s0 a0
+    @ li a7 214
+    @ addi a0 s0 len
+    @ ecall
+    @ mv a0 s0
 end
 
 module Print = struct

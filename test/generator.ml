@@ -132,7 +132,7 @@ let%expect_test "definition_hello_world" =
   execute _definition_hello_world;
   [%expect {| hello world!!! |}]
 
-let _definition_hello_world =
+let _definition_fact =
   "
 def fact (int n) =>
   var acc;
@@ -156,9 +156,10 @@ while j < 8 do
 done
 "
 
-let%expect_test "definition_hello_world" =
-  execute _definition_hello_world;
-  [%expect {|
+let%expect_test "definition_fact" =
+  execute _definition_fact;
+  [%expect
+    {|
     -5040
     720
     -120

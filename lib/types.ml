@@ -16,7 +16,7 @@ type token =
   | ID of string
   | VAR
   | COLONEQQ
-  | DEFINE
+  | DEF
   | IMPLIES
   | END
   | WHILE

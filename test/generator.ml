@@ -121,7 +121,7 @@ let%expect_test "xor" =
 
 let _definition_hello_world =
   "
-define helloworld =>
+def helloworld =>
   print \"hello world!!!\";
 end
 
@@ -134,7 +134,7 @@ let%expect_test "definition_hello_world" =
 
 let _definition_hello_world =
   "
-define fact (int n) =>
+def fact (int n) =>
   var acc;
   acc := 1;
   while (n != 0) do

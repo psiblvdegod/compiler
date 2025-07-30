@@ -15,7 +15,7 @@ let token_of_reserved = function
   | "or" -> Some OR
   | "true" -> Some TRUE
   | "false" -> Some FALSE
-  | "define" -> Some DEFINE
+  | "def" -> Some DEF
   | "end" -> Some END
   | _ -> None
 

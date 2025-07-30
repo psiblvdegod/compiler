@@ -115,7 +115,7 @@ let rec parse_to_program acc = function
   | FI :: rest -> Ok (List.rev acc, FI :: rest)
   | DONE :: rest -> Ok (List.rev acc, rest)
   | END :: rest -> Ok (List.rev acc, rest)
-  | DEFINE :: ID name :: rest -> (
+  | DEF :: ID name :: rest -> (
       match parse_define name rest with
       | Error err -> Error err
       | Ok (definition, rest) -> parse_to_program (definition :: acc) rest)

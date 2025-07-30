@@ -158,4 +158,20 @@ done
 
 let%expect_test "definition_hello_world" =
   execute _definition_hello_world;
-  [%expect {| hello world!!! |}]
+  [%expect {|
+    -5040
+    720
+    -120
+    24
+    -6
+    2
+    -1
+    1
+    1
+    2
+    6
+    24
+    120
+    720
+    5040
+    |}]

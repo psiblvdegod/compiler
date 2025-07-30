@@ -311,7 +311,7 @@ let%expect_test "call_stmt_correct 3" =
 
 let _define_iter_fact =
   "
-define fact (int n) =>
+def fact (int n) =>
     var acc;
     acc := 1;
     while n != 0 do

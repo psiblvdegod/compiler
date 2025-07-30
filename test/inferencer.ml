@@ -183,7 +183,7 @@ let%expect_test "ite_test" =
 
 let _definition_printsum =
   "
-define printsum (int left) (int right) =>
+def printsum (int left) (int right) =>
   print (left + right);
 end
 "
@@ -210,7 +210,7 @@ let%expect_test "definition_printsum" =
 
 let _definition_factorial =
   "
-define fact (int n) (int acc) =>
+def fact (int n) (int acc) =>
   if n == 0 then
       print(acc);
   else
@@ -256,7 +256,7 @@ let%expect_test "definition_factorial" =
 
 let _definition =
   "
-define helloworld =>
+def helloworld =>
   print \"hello world!!!\";
 end
 
@@ -265,7 +265,8 @@ helloworld;
 
 let%expect_test "_definition" =
   pp_annotated_ast _definition;
-  [%expect {|
+  [%expect
+    {|
     [((Typed_Definition ("helloworld", [],
          [((Typed_Call ("print", [(Type_Str (Typed_value "hello world!!!"))])),
            { vars = []; funcs = [("helloworld", [])] })]

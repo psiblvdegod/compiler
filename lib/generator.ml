@@ -7,8 +7,6 @@ open Asm.Instr
 open Asm.Str
 open Asm.Print
 
-let alignment = 32
-
 let rec compile_expression scope expression temps acc =
   match expression with
   | Type_Int (Typed_value n) ->
@@ -26,8 +24,6 @@ let rec compile_expression scope expression temps acc =
         acc @ create_asciz s @ addi sp sp (-alignment) @ [ "sd a0, (sp)\n" ]
       in
       acc
-  (* ===================================================================== *)
-  (*                           TODO : generalize                           *)
   | Type_Str (Typed_var name) ->
       let pos = (find_var_index scope name + temps) * alignment in
       let acc = acc @ ld_from_stack t1 pos @ sd_to_stack t1 0 in
@@ -47,7 +43,6 @@ let rec compile_expression scope expression temps acc =
         @ addi sp sp alignment @ sd_to_stack t1 0
       in
       acc
-  (* ===================================================================== *)
   | Type_Bool (Typed_var name) | Type_Int (Typed_var name) ->
       let pos = (find_var_index scope name + temps) * alignment in
       let acc =

@@ -1,5 +1,7 @@
 (* psiblvdegod, 2025, under MIT License *)
 
+let alignment = 32
+
 let generate_label () =
   let length = 16 in
   let buffer = Bytes.create length in

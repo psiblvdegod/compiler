@@ -309,9 +309,9 @@ let%expect_test "call_stmt_correct 3" =
         ]
       |}]
 
-let _define_correct_1 =
+let _define_iter_fact =
   "
-define fact n =>
+define fact (int n) =>
     var acc;
     acc := 1;
     while n != 0 do
@@ -319,19 +319,21 @@ define fact n =>
       n := n - 1;
     done
 end
+
+fact 5;
 "
 
-let%expect_test "define_correct_1 2" =
-  pp_program _define_correct_1;
+let%expect_test "define_iter_fact" =
+  pp_program _define_iter_fact;
   [%expect
     {|
-    [(Definition ("fact", ["n"],
+    [(Definition ("fact", [("int", "n")],
         [(Declaration ["acc"]); (Assignment ("acc", (Int 1)));
           (While ((BinOp (Neq, (Var "n"), (Int 0))),
              [(Assignment ("acc", (BinOp (Mul, (Var "acc"), (Var "n")))));
                (Assignment ("n", (BinOp (Sub, (Var "n"), (Int 1)))))]
              ))
           ]
-        ))
-      ]
+        ));
+      (Call ("fact", [(Int 5)]))]
     |}]

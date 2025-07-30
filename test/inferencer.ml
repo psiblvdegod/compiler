@@ -181,42 +181,75 @@ let%expect_test "ite_test" =
       ((Typed_Declaration ["d"]), { vars = [("a", TNull)]; funcs = [] })]
     |}]
 
-let _definition_test =
+let _definition_printsum =
   "
-var result;
-
-result := 0;
-
-define sum left right =>
-  left := 5;
-  right := 10;
-  result := left + right;
+define printsum (int left) (int right) =>
+  print (left + right);
 end
 "
 
-let%expect_test "definition_test" =
-  pp_annotated_ast _definition_test;
+let%expect_test "definition_printsum" =
+  pp_annotated_ast _definition_printsum;
   [%expect
     {|
-    [((Typed_Declaration ["result"]), { vars = []; funcs = [] });
-      ((Typed_Assignment ("result", (Type_Int (Typed_value 0)))),
-       { vars = [("result", TNull)]; funcs = [] });
-      ((Typed_Definition ("sum", [("left", TInt); ("right", TInt)],
-          [((Typed_Assignment ("left", (Type_Int (Typed_value 5)))),
-            { vars = [("left", TNull); ("right", TNull); ("result", TInt)];
-              funcs = [] });
-            ((Typed_Assignment ("right", (Type_Int (Typed_value 10)))),
-             { vars = [("left", TInt); ("right", TNull); ("result", TInt)];
-               funcs = [] });
-            ((Typed_Assignment ("result",
-                (Type_Int
-                   (Typed_binop (Add, (Type_Int (Typed_var "left")),
-                      (Type_Int (Typed_var "right")))))
-                )),
-             { vars = [("left", TInt); ("right", TInt); ("result", TInt)];
-               funcs = [] })
-            ]
-          )),
-       { vars = [("result", TInt)]; funcs = [] })
+    [((Typed_Definition ("printsum", [("right", TInt); ("left", TInt)],
+         [((Typed_Call ("print",
+              [(Type_Int
+                  (Typed_binop (Add, (Type_Int (Typed_var "left")),
+                     (Type_Int (Typed_var "right")))))
+                ]
+              )),
+           { vars = [("right", TInt); ("left", TInt)];
+             funcs = [("printsum", [("right", TInt); ("left", TInt)])] })
+           ]
+         )),
+      { vars = [("right", TInt); ("left", TInt)];
+        funcs = [("printsum", [("right", TInt); ("left", TInt)])] })
+      ]
+    |}]
+
+let _definition_factorial =
+  "
+define fact (int n) (int acc) =>
+  if n == 0 then
+      print(acc);
+  else
+      fact (n - 1) (n * acc);
+  fi
+end
+"
+
+let%expect_test "definition_factorial" =
+  pp_annotated_ast _definition_factorial;
+  [%expect
+    {|
+    [((Typed_Definition ("fact", [("acc", TInt); ("n", TInt)],
+         [((Typed_Ite (
+              (Type_Bool
+                 (Typed_binop (Eq, (Type_Int (Typed_var "n")),
+                    (Type_Int (Typed_value 0))))),
+              [((Typed_Call ("print", [(Type_Int (Typed_var "acc"))])),
+                { vars = [("acc", TInt); ("n", TInt)];
+                  funcs = [("fact", [("acc", TInt); ("n", TInt)])] })
+                ],
+              [((Typed_Call ("fact",
+                   [(Type_Int
+                       (Typed_binop (Sub, (Type_Int (Typed_var "n")),
+                          (Type_Int (Typed_value 1)))));
+                     (Type_Int
+                        (Typed_binop (Mul, (Type_Int (Typed_var "n")),
+                           (Type_Int (Typed_var "acc")))))
+                     ]
+                   )),
+                { vars = [("acc", TInt); ("n", TInt)];
+                  funcs = [("fact", [("acc", TInt); ("n", TInt)])] })
+                ]
+              )),
+           { vars = [("acc", TInt); ("n", TInt)];
+             funcs = [("fact", [("acc", TInt); ("n", TInt)])] })
+           ]
+         )),
+      { vars = [("acc", TInt); ("n", TInt)];
+        funcs = [("fact", [("acc", TInt); ("n", TInt)])] })
       ]
     |}]

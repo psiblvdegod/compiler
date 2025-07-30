@@ -180,3 +180,43 @@ let%expect_test "ite_test" =
        { vars = [("a", TNull)]; funcs = [] });
       ((Typed_Declaration ["d"]), { vars = [("a", TNull)]; funcs = [] })]
     |}]
+
+let _definition_test =
+  "
+var result;
+
+result := 0;
+
+define sum left right =>
+  left := 5;
+  right := 10;
+  result := left + right;
+end
+"
+
+let%expect_test "definition_test" =
+  pp_annotated_ast _definition_test;
+  [%expect
+    {|
+    [((Typed_Declaration ["result"]), { vars = []; funcs = [] });
+      ((Typed_Assignment ("result", (Type_Int (Typed_value 0)))),
+       { vars = [("result", TNull)]; funcs = [] });
+      ((Typed_Definition ("sum", [("left", TInt); ("right", TInt)],
+          [((Typed_Assignment ("left", (Type_Int (Typed_value 5)))),
+            { vars = [("left", TNull); ("right", TNull); ("result", TInt)];
+              funcs = [] });
+            ((Typed_Assignment ("right", (Type_Int (Typed_value 10)))),
+             { vars = [("left", TInt); ("right", TNull); ("result", TInt)];
+               funcs = [] });
+            ((Typed_Assignment ("result",
+                (Type_Int
+                   (Typed_binop (Add, (Type_Int (Typed_var "left")),
+                      (Type_Int (Typed_var "right")))))
+                )),
+             { vars = [("left", TInt); ("right", TInt); ("result", TInt)];
+               funcs = [] })
+            ]
+          )),
+       { vars = [("result", TInt)]; funcs = [] })
+      ]
+    |}]

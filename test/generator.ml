@@ -122,7 +122,7 @@ let%expect_test "xor" =
 let _definition_hello_world =
   "
 def helloworld =>
-  print \"hello world!!!\";
+  print \"hello\" \"world!!!\";
 end
 
 helloworld;

@@ -7,20 +7,23 @@ let execute input =
   | Error msg -> print_endline msg
   | Ok code -> App.run code
 
-let _print = "
-var a b;
-a := 1;
-b := 2;
-printn a b (a + b);
+let _print =
+  "
+var a b c d e f g;
+a := \" 1 \";
+b := \" 2 \";
+c := \" 3 \";
+
+d := \" 4 \";
+e := \" 5 \";
+f := \" 6 \";
+
+print a b c d e f;
 "
 
 let%expect_test "print" =
   execute _print;
-  [%expect {|
-    1
-    2
-    3
-    |}]
+  [%expect {| 1  2  3  4  5  6 |}]
 
 let _factorial =
   "
@@ -130,7 +133,7 @@ helloworld;
 
 let%expect_test "definition_hello_world" =
   execute _definition_hello_world;
-  [%expect {| hello world!!! |}]
+  [%expect {| helloworld!!! |}]
 
 let _definition_fact =
   "
@@ -176,3 +179,17 @@ let%expect_test "definition_fact" =
     720
     5040
     |}]
+
+let _concat =
+  "
+var a b c d;
+a := \" 123 \";
+b := \" 456 \";
+c := \" 789 \";
+
+print (a ^ b ^ c);
+"
+
+let%expect_test "concat" =
+  execute _concat;
+  [%expect {| 123  456  789 |}]

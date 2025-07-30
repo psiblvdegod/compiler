@@ -1,34 +1,28 @@
 \documentclass{beamer}
 \usetheme{CambridgeUS}
 \usepackage[utf8]{inputenc}
-\usepackage[T2A]{fontenc}
 \usepackage[russian]{babel}
 \usepackage{listings}
 \usepackage{xcolor}
 \setbeamercolor{item}{fg=red}
 
 \lstset{
-	  basicstyle=\bfseries\ttfamily,
+	basicstyle=\bfseries\ttfamily,
 	keywordstyle=\bfseries\color{blue},
-	commentstyle=\color{gray},
-	stringstyle=\color{red},
-	backgroundcolor=\color{white},
-	frame=single,
-	rulecolor=\color{black},
+	commentstyle=\bfseries\color{gray},
+	stringstyle=\bfseries\color{red},
 	tabsize=2,
 	showstringspaces=false,
 	breaklines=true,
-	breakatwhitespace=true,
 	captionpos=b,
 	frame=none,
 	numbers=none,
 }
 
 \title{Учебный компилятор}
-\author[Балышев А.М.]{Автор: Балышев А.М.\\ Руководитель: Косарев Д.С.}
+\author[Балышев А.М.]{Автор: Балышев А.М. \\ Руководитель: Косарев Д.С.}
 
 \begin{document}
-	
 	\begin{frame}[plain]
 		\maketitle
 	\end{frame}
@@ -56,37 +50,52 @@
 				\item Синтаксический разбор
 				\item Семантический разбор
 			\end{itemize}
-			\item Реализация бекенда
+			\item Реализация бэкенда
 			\begin{itemize}
-				\item Порождение RISC-V Assembly
+				\item Порождение RISC-V 64 Assembly
 			\end{itemize}
-			\item Рефакторинг кода и оформление репозитория
 		\end{itemize}
-		
 	\end{frame}
 	
-		\begin{frame}
+	\begin{frame}
 		\frametitle{О компилируемом языке}
 		\begin{itemize}
-			\item Инструкции верхнего уровня
-			\item Базовые императивные конструкции
+			\item Поддержка базовых императивных конструкций
 			\begin{itemize}
 				\item Объявления и присваивания
 				\item Циклы
 				\item Ветвления
-				\item Вызов процедур
+				\item Описание и вызов процедур
 			\end{itemize}
 			\item Поддержка типов и областей видимости
-			\item Pascal-like синтаксис
 		\end{itemize}
 	\end{frame}
 	
+	\begin{frame}[fragile]
+		\frametitle{Пример}
+	\begin{lstlisting}[language=BASH] 
+def fact (int n) =>
+	var acc;
+	acc := 1;
+	while (n != 0) do
+		acc := acc * n;
+		if (n < 0) then
+			n := n + 1;
+		else
+			n := n - 1;
+		fi
+	done 
+	printn acc;
+done
+	\end{lstlisting}
+	\end{frame}
+
 	\begin{frame}
 		\frametitle{О процессе компиляции}
 			\begin{itemize}
 			\item Каждый этап обрабатывается отдельной функцией
 			\item Функция принимает некоторое представление программы и возвращает новое представление, снабженное дополнительной информацией
-			\item Компиляция представляет собой последовательную передачу результатов вычислений предыдущей функции в следующую функцию
+			\item Компиляция осуществляется путём последовательной передачи результатов предыдущей функции в следующую функцию
 			\end{itemize}
 	\end{frame}
 
@@ -100,18 +109,18 @@
 			Сигнатура функции:
 
 			\begin{lstlisting}[language=ML] 
-			val tokenize : string -> token list
+	val tokenize : string -> token list
 			\end{lstlisting}
 
 			В качестве токенов могут выступать:
 			\begin{itemize}
-				\item Ключевые слова:
+				\item Ключевые слова
 				\begin{itemize}
-					\item \lstinline[language=ML]|while, do, done, if, then, else, fi ...|
+					\item \lstinline[language=BASH]|while, do, done, if, then, else, fi ...|
 				\end{itemize}
-				\item Литералы:
+				\item Литералы
 				\begin{itemize}
-					\item \lstinline[language=ML]|Int 42, true, false, String "hello world"|
+					\item \lstinline[language=ML]|Int(123), True, False, String("hello world")|
 				\end{itemize}
 				\item Унарные и бинарные операторы и скобки
 				\item Идентификаторы переменных и функций
@@ -127,15 +136,10 @@
 		\end{itemize}
 		Сигнатура функции:	
 		\begin{lstlisting}[language=ML] 
-		val build_ast : token list -> ast
+	val construct_ast : token list -> program
 		\end{lstlisting}
-		Детали реализации:
-		\begin{itemize}
-			\item Разбор выражений с помощью рекурсивного спуска
-			\item ???
-		\end{itemize}
 		\end{frame}
-	
+
 	\begin{frame}[fragile]
 		\frametitle{AST}
 		\begin{lstlisting}[language=ML] 
@@ -156,127 +160,101 @@ type expression =
 	\end{frame}
 	
 		\begin{frame}[fragile]
-		\frametitle{Семантический разбор}
-		Задачи:
-		\begin{itemize}
-			\item Дополнить AST информацией о типах и областях видимости
-			\item Выявить семантические ошибки
-		\end{itemize}
-				
-		\begin{lstlisting}[language=ML] 
-		val annotate_ast : ast -> annotated_ast
-		\end{lstlisting}
-		
-		Поддерживаемые на данный момент типы:
-		\begin{itemize}
-			\item Int
-			\item Bool
-			\item ASCIIZ String
-		\end{itemize}
-
+			\frametitle{Семантический разбор}
+			Задачи:
+			\begin{itemize}
+				\item Дополнить AST информацией о типах и областях видимости
+				\item Выявить семантические ошибки
+			\end{itemize}
+			\begin{lstlisting}[language=ML] 
+		val annotate_ast : program -> typed_program
+			\end{lstlisting}
+			Поддерживаемые на данный момент типы:
+			\begin{itemize}
+				\item Int
+				\item Bool
+				\item String
+			\end{itemize}
 		\end{frame}
-	\begin{frame}[fragile]
-			\frametitle{Annotated AST}
 
-\begin{lstlisting}[language=ML] 
+	\begin{frame}[fragile]
+		\frametitle{Annotated AST}
+		\begin{lstlisting}[basicstyle=\footnotesize\ttfamily, language=ML]
 type typed_program = (typed_statement * scope) list
 
 type typed_statement =
-| Typed_Assignment of string * typed_expression
-| Typed_While of typed_expression * typed_program
-| Typed_Ite of typed_expression * typed_program * typed_program
+| Assignment of string * typed_expression
+| While of typed_expression * typed_program
+| Ite of typed_expression * typed_program * typed_program
 | ...
 
 type typed_expression =
 | Type_Int of ...
 | Type_Bool of ...
 | Type_Str of ...
-
-\end{lstlisting}
-
-		\end{frame}
-
-\begin{frame}[fragile]
-	\frametitle{Порождение кода}
-	Задача — Преобразование AST в язык Ассемблера
-	\\
-	Сигнатура функции:
-	\begin{lstlisting}[language=ML] 
-	val generate_assembly : annotated_ast -> string
-	\end{lstlisting}
-	
-	Порождение кода реализовано только для riscv64
-\end{frame}
-
-\begin{frame}
-	\frametitle{Дальнейшие этапы}
-	\begin{itemize}
-		\item Ассемблирование
-		\begin{itemize}
-			\item Например, с помощью \lstinline[language=Python]|riscv64-unknown-elf-as|
-			\item Результат — объектный модуль
-		\end{itemize}
-		\item Линковка
-			\begin{itemize}
-				\item Например, с помощью \lstinline[language=Python]|riscv64-unknown-elf-ld|
-				\item Результат — исполняемый файл
-			\end{itemize}
-		\item Исполнение
-		\begin{itemize}
-			\item Нативно, если архитектура соответствующая
-			\item С помощью эмулятора, например \lstinline[language=Python]|qemu|
-		\end{itemize}
-	\end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]
-	\frametitle{Пример}
-	\begin{itemize}
-		\begin{lstlisting}[language=PASCAL]
-var left right;
-left := -7; right := 8;
-while left < right do
-		var n acc sign;
-		n := left;
-		acc := 1;
-		sign := n < 0;
-		while n != 0 do
-				acc := acc * n;  
-				if sign then n := n + 1;
-				else  n := n - 1;
-				fi
-		done
-		left := left + 1;
-		printn acc;
-done
 		\end{lstlisting}
-	\end{itemize}
-\end{frame}
+	\end{frame}
 
-\begin{frame}
-	\frametitle{О проблемах и решениях}
-	\begin{itemize}
-		\item При выделении места на стеке для локальных переменных при выходе из области видимости нужно восстановить \lstinline[language=Python]|sp|
-		\begin{itemize}		
-			\item Можно хранить текущее количество переменных
-		\end{itemize}
-		\item Метки для условных/безусловных переходов не должны повторяться
-		\begin{itemize}		
-			\item Можно генерировать их случайно
-		\end{itemize}
-	\end{itemize}
-\end{frame}
+	\begin{frame}[fragile]
+		\frametitle{Порождение кода}
+		Задача — Преобразование AST в язык Ассемблера
+		\\
+		Сигнатура функции:
+		\begin{lstlisting}[language=ML] 
+		val generate_assembly : annotated_ast -> string
+		\end{lstlisting}
+		
+		Порождение кода реализовано для riscv64
+	\end{frame}
 
-\begin{frame}
-	\frametitle{Использовавшиеся инструменты}
+	\begin{frame}
+		\frametitle{Дальнейшие этапы}
 		\begin{itemize}
-			\item \lstinline[language=Python]|ppx_expect|,  \lstinline[language=Python]|ppx_deriving|
+			\item Ассемблирование
 			\begin{itemize}
-				\item Специфичные для OCaml фреймворки значительно упрощающие тестирование и отладку
+				\item Например, с помощью \lstinline|riscv64-unknown-elf-as|
+				\item Результат — объектный модуль
 			\end{itemize}
-			
-			\item \lstinline[language=Python]|riscv64-unknown-elf-as|,  \lstinline[language=Python]|riscv64-unknown-elf-ld|
-			\item \lstinline[language=Python]|qemu-riscv64|, \lstinline[language=Python]|spike|
+			\item Линковка
+				\begin{itemize}
+					\item Например, с помощью \lstinline|riscv64-unknown-elf-ld|
+					\item Результат — исполняемый файл
+				\end{itemize}
+			\item Исполнение
+			\begin{itemize}
+				\item Нативно, если архитектура соответствующая
+				\item С помощью эмулятора, например \lstinline|qemu|
+			\end{itemize}
 		\end{itemize}
-\end{frame}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{О проблемах и решениях}
+		\begin{itemize}
+			\item Восстановление \lstinline|sp| при выходе из \lstinline|scope|'а
+			\begin{itemize}
+				\item Можно возвращать количество переменных
+			\end{itemize}
+			\item Затенение переменных и функций
+			\begin{itemize}		
+				\item Можно хранить и искать в порядке объявления
+			\end{itemize}
+			\item Метки не должны повторяться
+			\begin{itemize}
+				\item Можно генерировать их случайно
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Использовавшиеся инструменты}
+			\begin{itemize}
+				\item \lstinline|ppx_expect|,  \lstinline|ppx_deriving|
+				\item \lstinline|ocamlformat|
+				\item \lstinline|riscv64-unknown-elf-as|
+				\item \lstinline|riscv64-unknown-elf-ld|
+				\item \lstinline|qemu-riscv64|
+				\item \lstinline|spike|
+			\end{itemize}
+	\end{frame}
 \end{document}

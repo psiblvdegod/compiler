@@ -83,7 +83,7 @@ and statement =
   | Assignment of string * expression
   | While of expression * program
   | Ite of expression * program * program
-  | Definition of string * string list * program
+  | Definition of string * (string * string) list * program
   | Call of string * expression list
 [@@deriving show { with_path = false }]
 
@@ -102,6 +102,7 @@ type inferencer_error =
   | Already_specified
   | Unused_definition_argument
   | Arguments_type_dismatch
+  | Unknown_type_in_definition
 [@@deriving show { with_path = false }]
 
 type expression_type = TInt | TBool | TStr | TNull

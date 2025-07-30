@@ -169,54 +169,37 @@ and infer_call scope name args =
   | Error err -> Error err
   | Ok typed_args -> Ok (scope, (Typed_Call (name, typed_args), scope))
 
+(* TODO : assert that args are unique *)
 and infer_definition scope name args program =
-  let typed_args = List.map (fun arg -> (arg, TNull)) args in
-  let body_scope = { vars = typed_args @ scope.vars; funcs = scope.funcs } in
-  match infer_program body_scope program [] with
+  let rec annotate_args args acc =
+    match args with
+    | [] -> Ok acc
+    | (type_name, arg_name) :: rest -> (
+        match type_name with
+        | "int" -> annotate_args rest ((arg_name, TInt) :: acc)
+        | "bool" -> annotate_args rest ((arg_name, TBool) :: acc)
+        | "string" -> annotate_args rest ((arg_name, TStr) :: acc)
+        | _ -> Error Unknown_type_in_definition)
+  in
+  match annotate_args args [] with
   | Error err -> Error err
-  | Ok typed_program -> (
-      let rec infer_args program typed_args =
-        match program with
-        | [] -> Ok typed_args
-        | (_, scope) :: program -> (
-            let rec loop names result =
-              match names with
-              | [] -> Ok result
-              | arg_name :: rest -> (
-                  match List.assoc arg_name scope.vars with
-                  | TNull -> loop rest result
-                  | scope_type -> (
-                      match List.assoc arg_name result with
-                      | TNull ->
-                          loop rest (replace_assoc result arg_name scope_type)
-                      | arg_type when arg_type = scope_type -> loop rest result
-                      | _ -> Error Arguments_type_dismatch))
-            in
-
-            match loop args typed_args with
-            | Error err -> Error err
-            | Ok typed_args -> infer_args program typed_args)
+  | Ok typed_args -> (
+      let body_scope =
+        {
+          vars = typed_args @ scope.vars;
+          funcs = (name, typed_args) :: scope.funcs;
+        }
       in
-
-      let typed_args_res =
-        infer_args typed_program (List.map (fun arg -> (arg, TNull)) args)
-      in
-      match typed_args_res with
+      match infer_program body_scope program [] with
       | Error err -> Error err
-      | Ok typed_args ->
-          if List.exists (fun (_, arg_type) -> arg_type = TNull) typed_args then
-            Error Unused_definition_argument
-          else
-            let new_scope =
-              {
-                vars = scope.vars;
-                funcs = [ (name, typed_args) ] @ scope.funcs;
-              }
-            in
-            let definition =
-              Typed_Definition (name, typed_args, typed_program)
-            in
-            Ok (new_scope, (definition, scope)))
+      | Ok typed_program ->
+          let new_scope =
+            { vars = scope.vars; funcs = (name, typed_args) :: scope.funcs }
+          in
+          Ok
+            ( new_scope,
+              (Typed_Definition (name, typed_args, typed_program), body_scope)
+            ))
 
 and replace_assoc ls key value =
   let rec loop ls acc =

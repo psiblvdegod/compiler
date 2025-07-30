@@ -175,17 +175,16 @@ and parse_define name tokens =
   let rec get_args tokens acc =
     match tokens with
     | [] -> Ok (List.rev acc)
-    | head :: rest -> (
-        match head with
-        | ID arg -> get_args rest (arg :: acc)
-        | _ -> Error Invalid_statement)
+    | LP :: ID arg_type :: ID arg :: RP :: rest ->
+        get_args rest ((arg_type, arg) :: acc)
+    | _ -> Error Invalid_statement
   in
   match get_args args_tokens [] with
   | Error err -> Error err
   | Ok args -> (
       match parse_to_program [] rest with
       | Error err -> Error err
-      | Ok (body, rest) -> Ok (Definition (name, args, body), rest))
+      | Ok (program, rest) -> Ok (Definition (name, args, program), rest))
 
 let parse_expression tokens =
   match parse_expression tokens with

@@ -4,6 +4,7 @@
 \usepackage[russian]{babel}
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage{hyperref}
 \setbeamercolor{item}{fg=red}
 
 \lstset{
@@ -17,6 +18,12 @@
 	captionpos=b,
 	frame=none,
 	numbers=none,
+}
+
+\hypersetup{
+	colorlinks=true,
+	linkcolor=black,
+	urlcolor=blue
 }
 
 \title{Учебный компилятор}
@@ -95,7 +102,7 @@ done
 			\begin{itemize}
 			\item Каждый этап обрабатывается отдельной функцией
 			\item Функция принимает некоторое представление программы и возвращает новое представление, снабженное дополнительной информацией
-			\item Компиляция осуществляется путём последовательной передачи результатов предыдущей функции в следующую функцию
+			\item Компиляция осуществляется путём последовательного применения этих функций
 			\end{itemize}
 	\end{frame}
 
@@ -103,7 +110,7 @@ done
 		\frametitle{Лексический разбор}
 			Задачи:
 			\begin{itemize}
-				\item Преобразовать строку в последовательность токенов
+				\item Преобразовать исходный код в последовательность токенов
 				\item Выявить лексические ошибки
 			\end{itemize}
 			Сигнатура функции:
@@ -126,7 +133,7 @@ done
 				\item Идентификаторы переменных и функций
 			\end{itemize}
 	\end{frame}
-	
+
 	\begin{frame}[fragile]
 		\frametitle{Синтаксический разбор}
 		Задачи:
@@ -222,8 +229,8 @@ type typed_expression =
 				\end{itemize}
 			\item Исполнение
 			\begin{itemize}
-				\item Нативно, если архитектура соответствующая
-				\item С помощью эмулятора, например \lstinline|qemu|
+				\item Или нативно, если архитектура соответствующая
+				\item Или с помощью эмулятора, например \lstinline|qemu|
 			\end{itemize}
 		\end{itemize}
 	\end{frame}
@@ -256,5 +263,10 @@ type typed_expression =
 				\item \lstinline|qemu-riscv64|
 				\item \lstinline|spike|
 			\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Заключение}
+			\href{https://github.com/psiblvdegod/compiler}{Репозиторий}
 	\end{frame}
 \end{document}

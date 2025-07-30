@@ -119,7 +119,7 @@ let%expect_test "xor" =
   execute _xor;
   [%expect {| true |}]
 
-let _definition =
+let _definition_hello_world =
   "
 define helloworld =>
   print \"hello world!!!\";
@@ -128,6 +128,34 @@ end
 helloworld;
 "
 
-let%expect_test "_definition" =
-  execute _definition;
+let%expect_test "definition_hello_world" =
+  execute _definition_hello_world;
+  [%expect {| hello world!!! |}]
+
+let _definition_hello_world =
+  "
+define fact (int n) =>
+  var acc;
+  acc := 1;
+  while (n != 0) do
+    acc := acc * n;
+    if (n < 0) then
+      n := n + 1;
+    else
+      n := n - 1;
+    fi
+  done 
+  printn acc;
+end
+
+var j;
+j := -7;
+while j < 8 do
+  fact j;
+  j := j + 1;
+done
+"
+
+let%expect_test "definition_hello_world" =
+  execute _definition_hello_world;
   [%expect {| hello world!!! |}]

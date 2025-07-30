@@ -100,6 +100,8 @@ type inferencer_error =
   | Expression_type_dismatch
   | Function_type_dismatch
   | Already_specified
+  | Unused_definition_argument
+  | Arguments_type_dismatch
 [@@deriving show { with_path = false }]
 
 type expression_type = TInt | TBool | TStr | TNull
@@ -107,7 +109,7 @@ type expression_type = TInt | TBool | TStr | TNull
 
 and scope = {
   vars : (string * expression_type) list;
-  funcs : (string * expression_type * expression_type list) list;
+  funcs : (string * (string * expression_type) list) list;
 }
 [@@deriving show { with_path = false }]
 
@@ -127,7 +129,7 @@ and typed_statement =
   | Typed_Assignment of string * typed_expression
   | Typed_While of typed_expression * typed_program
   | Typed_Ite of typed_expression * typed_program * typed_program
-  | Typed_Definition of string * string list * typed_program
+  | Typed_Definition of string * (string * expression_type) list * typed_program
   | Typed_Call of string * typed_expression list
 [@@deriving show { with_path = false }]
 

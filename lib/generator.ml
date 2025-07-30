@@ -170,7 +170,6 @@ let rec compile_program typed_program local_cnt acc =
           let wipe_locals_else =
             addi sp sp ((locals_cnt_else - local_cnt) * alignment)
           in
-
           let acc =
             acc
             @ compile_expressions scope [ condition ]
@@ -186,13 +185,34 @@ let rec compile_program typed_program local_cnt acc =
       | Typed_Call (name, args) ->
           let acc = acc @ compile_call scope name args in
           compile_program rest local_cnt acc
-      | _ -> raise Not_implemented)
+      | Typed_Definition (name, typed_args, typed_program) ->
+          let end_label = generate_label () in
+          let acc =
+            acc @ jump end_label
+            @ [ name ^ ":\n" ]
+            @ addi sp sp (-alignment) @ sd_to_stack ra 0
+          in
+          let local_cnt' = local_cnt + List.length typed_args in
+          let delta = (local_cnt - local_cnt') * alignment in
+          let acc = acc @ addi sp sp delta in
+          let compiled_program, local_cnt'' =
+            compile_program typed_program local_cnt' []
+          in
+          let wipe_locals =
+            addi sp sp ((local_cnt'' - local_cnt) * alignment)
+          in
+          let acc =
+            acc @ compiled_program @ wipe_locals @ ld_from_stack ra 0
+            @ addi sp sp alignment @ [ "ret\n" ]
+            @ [ end_label ^ ":\n" ]
+          in
+          compile_program rest local_cnt acc)
 
 and compile_call scope name args =
   match name with
   | "print" -> print scope args []
   | "printn" -> printn scope args []
-  | _ -> raise Not_supported
+  | name -> [ Printf.sprintf "call %s\n" name ]
 
 and print scope exprs acc =
   match exprs with

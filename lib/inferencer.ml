@@ -83,7 +83,11 @@ let rec infer_program scope program acc =
           | Error err -> Error err
           | Ok (new_scope, typed_call) ->
               infer_program new_scope rest (typed_call :: acc))
-      | _ -> raise Not_implemented)
+      | Definition (name, args, program) -> (
+          match infer_definition scope name args program with
+          | Error err -> Error err
+          | Ok (new_scope, definition) ->
+              infer_program new_scope rest (definition :: acc)))
 
 and infer_declaration scope vars =
   let has_no_duplicates ls =
@@ -164,6 +168,55 @@ and infer_call scope name args =
   match loop args [] with
   | Error err -> Error err
   | Ok typed_args -> Ok (scope, (Typed_Call (name, typed_args), scope))
+
+and infer_definition scope name args program =
+  let typed_args = List.map (fun arg -> (arg, TNull)) args in
+  let body_scope = { vars = typed_args @ scope.vars; funcs = scope.funcs } in
+  match infer_program body_scope program [] with
+  | Error err -> Error err
+  | Ok typed_program -> (
+      let rec infer_args program typed_args =
+        match program with
+        | [] -> Ok typed_args
+        | (_, scope) :: program -> (
+            let rec loop names result =
+              match names with
+              | [] -> Ok result
+              | arg_name :: rest -> (
+                  match List.assoc arg_name scope.vars with
+                  | TNull -> loop rest result
+                  | scope_type -> (
+                      match List.assoc arg_name result with
+                      | TNull ->
+                          loop rest (replace_assoc result arg_name scope_type)
+                      | arg_type when arg_type = scope_type -> loop rest result
+                      | _ -> Error Arguments_type_dismatch))
+            in
+
+            match loop args typed_args with
+            | Error err -> Error err
+            | Ok typed_args -> infer_args program typed_args)
+      in
+
+      let typed_args_res =
+        infer_args typed_program (List.map (fun arg -> (arg, TNull)) args)
+      in
+      match typed_args_res with
+      | Error err -> Error err
+      | Ok typed_args ->
+          if List.exists (fun (_, arg_type) -> arg_type = TNull) typed_args then
+            Error Unused_definition_argument
+          else
+            let new_scope =
+              {
+                vars = scope.vars;
+                funcs = [ (name, typed_args) ] @ scope.funcs;
+              }
+            in
+            let definition =
+              Typed_Definition (name, typed_args, typed_program)
+            in
+            Ok (new_scope, (definition, scope)))
 
 and replace_assoc ls key value =
   let rec loop ls acc =

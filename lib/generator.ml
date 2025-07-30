@@ -35,6 +35,7 @@ let rec compile_expression scope expression temps acc =
       let pos = (find_var_index scope name + temps) * alignment in
       let acc = acc
       @ ld_from_stack t1 pos
+      @ addi sp sp (-alignment)
       @ sd_to_stack t1 0 in
       acc
   | Type_Str (Typed_unop (unop, typed_expr)) ->
@@ -115,8 +116,24 @@ and apply_binop = function
   | Geq -> sge t1 t1 t2
   | Neq -> sne t1 t1 t2
   | And -> mul t1 t1 t2
-  | Or -> add t1 t1 t2 @ sge t1 t1 zero
-  | _ -> raise Not_implemented
+  | Or -> []
+    @ add t1 t1 t2
+    @ sge t1 t1 zero
+  | Cat -> []
+    @ mv s1 t1
+    @ mv s2 t2
+    @ mv a0 t1
+    @ str_len_asciz ()
+    @ mv s3 a0
+    @ mv a0 s2
+    @ str_len_asciz ()
+    @ addi s4 a0 1
+    @ add a0 s3 s4
+    @ sbrk ()
+    @ copy_bytes s1 a0 s3
+    @ add t2 a0 s3
+    @ copy_bytes s2 t2 s4
+    @ mv t1 a0
 
 and apply_unop = function
   | Neg -> li t2 (-1) @ mul t1 t1 t2
@@ -138,8 +155,7 @@ let rec compile_program typed_program local_cnt acc =
           compile_program rest local_cnt acc
       | Typed_Assignment (name, typed_expr) ->
           let pos = find_var_index scope name * alignment in
-          let acc =
-            acc
+          let acc = acc
             @ compile_expressions scope [ typed_expr ]
             @ lw_from_stack t1 0 @ addi sp sp alignment @ sw_to_stack t1 pos
           in
@@ -230,15 +246,24 @@ and print scope exprs acc =
   | [] -> acc
   | expr :: rest ->
       let acc =
-        acc
-        @ compile_expressions scope [ expr ]
-        @ lw_from_stack a0 0 @ addi sp sp alignment
-      in
-      let acc =
         match expr with
-        | Type_Bool _ -> acc @ print_bool a0
-        | Type_Int _ -> acc @ print_number a0
-        | Type_Str _ -> acc @ mv s1 a0 @ str_len_asciz () @ print_bytes_from s1 a0
+        | Type_Bool _ -> acc
+          @ compile_expressions scope [ expr ]
+          @ lw_from_stack a0 0
+          @ addi sp sp alignment
+          @ print_bool a0
+        | Type_Int _ -> acc
+          @ compile_expressions scope [ expr ]
+          @ lw_from_stack a0 0
+          @ addi sp sp alignment
+          @ print_number a0
+        | Type_Str _ -> acc
+          @ compile_expressions scope [ expr ]
+          @ ld_from_stack a0 0
+          @ addi sp sp alignment
+          @ mv s5 a0
+          @ str_len_asciz ()
+          @ print_bytes_from s5 a0
       in
       print scope rest acc
 

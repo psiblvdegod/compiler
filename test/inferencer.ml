@@ -68,7 +68,6 @@ c := \"1\" ^ b;
 d := true;
 
 e := d or false;
-
 "
 
 let%expect_test "operations_test" =

@@ -7,22 +7,18 @@ let execute input =
   | Error msg -> print_endline msg
   | Ok code -> App.run code
 
-let _print =
+let _concat =
   "
-var a b c d e f g;
-a := \" 1 \";
-b := \" 2 \";
-c := \" 3 \";
+var a b c;
+a := \" 1 \" ^ \" 2 \";
+b := \" 3 \" ^ \" 4 \" ^ \" 5 \";
+c := a ^ b ^ \" 6 \";
 
-d := \" 4 \";
-e := \" 5 \";
-f := \" 6 \";
-
-print a b c d e f;
+print c;
 "
 
-let%expect_test "print" =
-  execute _print;
+let%expect_test "concat" =
+  execute _concat;
   [%expect {| 1  2  3  4  5  6 |}]
 
 let _factorial =
@@ -81,32 +77,32 @@ let%expect_test "factorial" =
 
 let _fibonacci =
   "
-var a b n;
+var a b j;
 
-n := 7;
 a := 0;
 b := 1;
+j := 0;
 
-while n > 1 do
+while j < 8 do
+  printn a;
   b := a + b; 
   a := b - a;
-  n := n - 1;
-
-  printn b;
-
+  j := j + 1;
 done
 "
 
 let%expect_test "fibonacci" =
   execute _fibonacci;
   [%expect {|
-      1
-      2
-      3
-      5
-      8
-      13
-      |}]
+    0
+    1
+    1
+    2
+    3
+    5
+    8
+    13
+    |}]
 
 let _xor =
   "

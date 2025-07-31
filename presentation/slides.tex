@@ -5,6 +5,7 @@
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{hyperref}
+\usepackage{graphicx}
 \setbeamercolor{item}{fg=red}
 
 \lstset{
@@ -45,11 +46,9 @@
 	
 	\begin{frame}
 		\frametitle{Цель и задачи}
-		Цель:
-		\\
-		Создание AOT-компилятора вымышленного императивного языка, способного компилировать относительно несложные программы 
-		
-		Задачи:\\
+		\textbf{Цель:} \\
+		Создание AOT-компилятора вымышленного императивного языка, способного компилировать относительно несложные программы
+		\textbf{Задачи:}\\
 		\begin{itemize}
 			\item Реализация фронтенда
 			\begin{itemize}
@@ -59,7 +58,7 @@
 			\end{itemize}
 			\item Реализация бэкенда
 			\begin{itemize}
-				\item Порождение RISC-V 64 Assembly
+				\item Порождение RISC-V Assembly
 			\end{itemize}
 		\end{itemize}
 	\end{frame}
@@ -81,18 +80,17 @@
 	\begin{frame}[fragile]
 		\frametitle{Пример}
 	\begin{lstlisting}[language=BASH] 
-def fact (int n) =>
-	var acc;
-	acc := 1;
-	while (n != 0) do
-		acc := acc * n;
-		if (n < 0) then
-			n := n + 1;
-		else
-			n := n - 1;
-		fi
-	done 
-	printn acc;
+var a b j;
+
+a := 0;
+b := 1;
+j := 0;
+
+while j < 8 do
+	print a;
+	b := a + b;
+	a := b - a;
+	j := j + 1;
 done
 	\end{lstlisting}
 	\end{frame}
@@ -105,6 +103,21 @@ done
 			\item Компиляция осуществляется путём последовательного применения этих функций
 			\end{itemize}
 	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Этапы построения исполняемого модуля}
+		\begin{center}
+			\includegraphics[width=0.5\linewidth]{stages.jpg}
+		\end{center}
+	\end{frame}
+	
+	\begin{frame}
+		\frametitle{Этапы компиляции}
+		\begin{center}
+			\hspace{1.5cm}
+			\includegraphics[width=0.3\linewidth]{compilation.jpg}
+		\end{center}
+	\end{frame}
 
 	\begin{frame}[fragile]
 		\frametitle{Лексический разбор}
@@ -114,11 +127,9 @@ done
 				\item Выявить лексические ошибки
 			\end{itemize}
 			Сигнатура функции:
-
 			\begin{lstlisting}[language=ML] 
 	val tokenize : string -> token list
 			\end{lstlisting}
-
 			В качестве токенов могут выступать:
 			\begin{itemize}
 				\item Ключевые слова
@@ -173,6 +184,7 @@ type expression =
 				\item Дополнить AST информацией о типах и областях видимости
 				\item Выявить семантические ошибки
 			\end{itemize}
+			Сигнатура функции:
 			\begin{lstlisting}[language=ML] 
 		val annotate_ast : program -> typed_program
 			\end{lstlisting}
@@ -204,14 +216,21 @@ type typed_expression =
 
 	\begin{frame}[fragile]
 		\frametitle{Порождение кода}
-		Задача — Преобразование AST в язык Ассемблера
+		Задача:
+		\begin{itemize}
+			\item Генерация языка Ассемблера по AST
+		\end{itemize}
 		\\
 		Сигнатура функции:
 		\begin{lstlisting}[language=ML] 
-		val generate_assembly : annotated_ast -> string
+	val generate_assembly : annotated_ast -> string
 		\end{lstlisting}
-		
-		Порождение кода реализовано для riscv64
+
+		\begin{itemize}
+			\item Порождение кода реализовано для RISC-V 64-bit
+			\item Локальные переменные размещаются в стеке
+			\item ASCIIZ-строки — в куче
+		\end{itemize}
 	\end{frame}
 
 	\begin{frame}
@@ -240,11 +259,11 @@ type typed_expression =
 		\begin{itemize}
 			\item Восстановление \lstinline|sp| при выходе из \lstinline|scope|'а
 			\begin{itemize}
-				\item Можно возвращать количество переменных
+				\item Можно передавать в \lstinline|scope| и возвращать из него количество переменных на стеке
 			\end{itemize}
 			\item Затенение переменных и функций
 			\begin{itemize}		
-				\item Можно хранить и искать в порядке объявления
+				\item Можно хранить и искать содержимое \lstinline|scope| в порядке объявления
 			\end{itemize}
 			\item Метки не должны повторяться
 			\begin{itemize}
@@ -254,19 +273,16 @@ type typed_expression =
 	\end{frame}
 
 	\begin{frame}
-		\frametitle{Использовавшиеся инструменты}
+		\frametitle{Заключение}
+			Использовавшиеся инструменты:
 			\begin{itemize}
-				\item \lstinline|ppx_expect|,  \lstinline|ppx_deriving|
+				\item \lstinline|ppx_expect|, \lstinline|ppx_deriving|
 				\item \lstinline|ocamlformat|
 				\item \lstinline|riscv64-unknown-elf-as|
 				\item \lstinline|riscv64-unknown-elf-ld|
 				\item \lstinline|qemu-riscv64|
 				\item \lstinline|spike|
 			\end{itemize}
-	\end{frame}
-
-	\begin{frame}
-		\frametitle{Заключение}
-			\href{https://github.com/psiblvdegod/compiler}{Репозиторий}
+			Ссылка на репозиторий: \url{https://github.com/psiblvdegod/compiler}
 	\end{frame}
 \end{document}

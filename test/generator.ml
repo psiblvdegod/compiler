@@ -7,22 +7,18 @@ let execute input =
   | Error msg -> print_endline msg
   | Ok code -> App.run code
 
-let _print =
+let _concat =
   "
-var a b c d e f g;
-a := \" 1 \";
-b := \" 2 \";
-c := \" 3 \";
+var a b c;
+a := \" 1 \" ^ \" 2 \";
+b := \" 3 \" ^ \" 4 \" ^ \" 5 \";
+c := a ^ b ^ \" 6 \";
 
-d := \" 4 \";
-e := \" 5 \";
-f := \" 6 \";
-
-print a b c d e f;
+print c;
 "
 
-let%expect_test "print" =
-  execute _print;
+let%expect_test "concat" =
+  execute _concat;
   [%expect {| 1  2  3  4  5  6 |}]
 
 let _factorial =

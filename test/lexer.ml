@@ -54,7 +54,12 @@ let%expect_test "test on correct input 3" =
     SEMI
     |}]
 
-let correct_input_4 = "if a > 1 then a := b; else a := c; fi;"
+let correct_input_4 = "
+if a > 1 then 
+  a := b; 
+else 
+  a := c; 
+fi"
 
 let%expect_test "test on correct input 4" =
   pp_tokens correct_input_4;
@@ -75,7 +80,6 @@ let%expect_test "test on correct input 4" =
     (ID "c")
     SEMI
     FI
-    SEMI
     |}]
 
 let incorrect_input_1 = "_]?"

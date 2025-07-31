@@ -1,8 +1,10 @@
 (* psiblvdegod, 2025, under MIT License *)
 
+(* contains riscv64 mnemonics and auxiliary function used in the generator module *)
+
 [@@@ocamlformat "disable"]
 
-let alignment = 32
+let alignment = 16
 
 let generate_label () =
   let length = 16 in
@@ -34,8 +36,8 @@ module Reg = struct
   let a5 = "a5"
   let a6 = "a6"
   let a7 = "a7"
-  let zero = "x0"
   let ra = "ra"
+  let zero = "x0"
 end
 
 module Instr = struct
@@ -100,12 +102,12 @@ module Str = struct
   open Reg
   open Instr
 
-  let rec create_asciz str = []
+  let rec create_str_imm str = []
     @ li a0 (String.length str + 1)
     @ sbrk ()
-    @ store_str a0 (str ^ "\x00")
+    @ store_str_imm a0 (str ^ "\x00")
 
-  and store_str dest str =
+  and store_str_imm dest str =
     let ls = String.to_seq str |> List.of_seq in
     let add ch = []
       @ li t0 (Char.code ch)
@@ -140,21 +142,21 @@ module Str = struct
     @ ecall
     @ mv a0 s0
 
-    and copy_bytes src dest len =
-      let loop_label = generate_label () in
-      let end_label = generate_label () in []
-      @ mv t1 src
-      @ mv t2 dest
-      @ mv t3 len
-      @ [ loop_label ^ ":\n" ]
-      @ beqz t3 end_label
-      @ lb t0 t1
-      @ sb t0 t2
-      @ addi t1 t1 1
-      @ addi t2 t2 1
-      @ addi t3 t3 (-1)
-      @ jump loop_label
-      @ [ end_label ^ ":\n" ]
+  and copy_bytes src dest len =
+    let loop_label = generate_label () in
+    let end_label = generate_label () in []
+    @ mv t1 src
+    @ mv t2 dest
+    @ mv t3 len
+    @ [ loop_label ^ ":\n" ]
+    @ beqz t3 end_label
+    @ lb t0 t1
+    @ sb t0 t2
+    @ addi t1 t1 1
+    @ addi t2 t2 1
+    @ addi t3 t3 (-1)
+    @ jump loop_label
+    @ [ end_label ^ ":\n" ]
 end
 
 module Print = struct
@@ -174,7 +176,7 @@ module Print = struct
   and print_str_imm str =
     let len = String.length str in []
       @ addi sp sp (-len)
-      @ store_str sp str
+      @ store_str_imm sp str
       @ li t0 len
       @ print_bytes_from sp t0
       @ addi sp sp len

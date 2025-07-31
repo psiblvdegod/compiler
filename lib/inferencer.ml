@@ -97,7 +97,6 @@ and infer_declaration scope vars =
     in
     loop (List.sort Stdlib.compare ls)
   in
-
   if has_no_duplicates vars = false then Error Already_declared
   else
     let typed_vars = List.map (fun var -> (var, TNull)) vars in
@@ -164,7 +163,6 @@ and infer_call scope name args =
         | Error err -> Error err
         | Ok typed_expr -> loop rest (typed_expr :: acc))
   in
-
   match loop args [] with
   | Error err -> Error err
   | Ok typed_args -> Ok (scope, (Typed_Call (name, typed_args), scope))

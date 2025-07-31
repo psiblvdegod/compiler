@@ -9,6 +9,5 @@ val compile : string -> (string, string) result
     requires:
     riscv64-unknown-elf-as
     riscv64-unknown-elf-as
-    exported EMULATOR env var ('qemu-riscv64' or 'spike pk' or something else)
 *)
 val run : string -> unit

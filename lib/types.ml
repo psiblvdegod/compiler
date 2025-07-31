@@ -8,6 +8,7 @@ exception Not_supported
 type lexer_error = Invalid_token | Input_is_empty
 [@@deriving show { with_path = false }]
 
+(* acceptable lexemes at the stage of lexical analysis *)
 type token =
   | STR of string
   | INT of int
@@ -105,9 +106,11 @@ type inferencer_error =
   | Unknown_type_in_definition
 [@@deriving show { with_path = false }]
 
+(* acceptable types of expressions at the stage of semantic analysis *)
 type expression_type = TInt | TBool | TStr | TNull
 [@@deriving show { with_path = false }]
 
+(* contains information about variables and functions for statement at the stage of semantic analysis *)
 and scope = {
   vars : (string * expression_type) list;
   funcs : (string * (string * expression_type) list) list;

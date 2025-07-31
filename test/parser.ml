@@ -309,7 +309,7 @@ let%expect_test "call_stmt_correct 3" =
         ]
       |}]
 
-let _define_iter_fact =
+let _define_fact =
   "
 def fact (int n) =>
     var acc;
@@ -323,8 +323,8 @@ end
 fact 5;
 "
 
-let%expect_test "define_iter_fact" =
-  pp_program _define_iter_fact;
+let%expect_test "define_fact" =
+  pp_program _define_fact;
   [%expect
     {|
     [(Definition ("fact", [("int", "n")],

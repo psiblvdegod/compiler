@@ -26,7 +26,7 @@ let rec compile_expression scope expression temps acc =
       acc
   | Type_Str (Typed_value s) ->
       let acc = acc
-        @ create_asciz s
+        @ create_str_imm s
         @ addi sp sp (-alignment)
         @ sd_to_stack a0 0
       in
@@ -136,7 +136,9 @@ and apply_binop = function
     @ mv t1 a0
 
 and apply_unop = function
-  | Neg -> li t2 (-1) @ mul t1 t1 t2
+  | Neg -> []
+    @ li t2 (-1)
+    @ mul t1 t1 t2
   | Not -> seq t1 t1 zero
   | _ -> raise Not_implemented
 

@@ -1,0 +1,24 @@
+def fact (int n) =>
+  
+  var acc;
+  acc := 1;
+
+  while (n != 0) do
+    acc := acc * n;
+    
+    if (n < 0) then
+      n := n + 1;
+    else
+      n := n - 1;
+    fi
+    
+  done 
+  printn acc;
+end
+
+var j;
+j := -7;
+while j < 8 do
+  fact j;
+  j := j + 1;
+done

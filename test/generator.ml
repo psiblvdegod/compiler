@@ -77,32 +77,32 @@ let%expect_test "factorial" =
 
 let _fibonacci =
   "
-var a b n;
+var a b j;
 
-n := 7;
 a := 0;
 b := 1;
+j := 0;
 
-while n > 1 do
+while j < 8 do
+  printn a;
   b := a + b; 
   a := b - a;
-  n := n - 1;
-
-  printn b;
-
+  j := j + 1;
 done
 "
 
 let%expect_test "fibonacci" =
   execute _fibonacci;
   [%expect {|
-      1
-      2
-      3
-      5
-      8
-      13
-      |}]
+    0
+    1
+    1
+    2
+    3
+    5
+    8
+    13
+    |}]
 
 let _xor =
   "
